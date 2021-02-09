@@ -1,2 +1,6 @@
 Sean Griffen (griffens)
 
+This is my solution to homework 1.01, Dungeon Generation.
+
+
+To run the program, run the Makefile, and enter './rouge.o' followed by the specified arguments in the command window

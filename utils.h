@@ -1,0 +1,1 @@
+int utils_rand_between(int lower_bound, int upper_bound, time_t *seed);

@@ -1,1 +1,14 @@
-02/03/2021: Started CHANGELOG. Created Makefile and README
+02/08/2021 (2:00PM):
+	- Base corridor generation working
+
+02/08/2021:
+	- Added staircases to rooms
+	- Worked on different stratigies for generating cooridors, need to complete
+
+02/07/2021:
+	- Created base structs for Levels, Rooms, and Cells
+	- Got random room generation working
+
+02/03/2021: 
+	- Started CHANGELOG
+	- Created Makefile and README
