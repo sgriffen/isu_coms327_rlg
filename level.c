@@ -40,7 +40,7 @@ struct Level level_init(int level_height, int level_width) {
 	/* generate and sort rooms */
 	level_generate_rooms(&level);
 	
-	level_print(level);
+	//level_print(level, 0);
 	
 	/* generate cooridors */
 	level_generate_cooridors(&level);
@@ -238,24 +238,32 @@ void level_generate_staircases(struct Level *level) {
 	return;
 }
 
-void level_print(struct Level level) {
+void level_print(struct Level level, int print_border) {
 	
 	int i, j;
 	
-	for (i = 0; i < level.width + 2; i++) { printf("-"); } //print top border
+	if (print_border) {  //print top border if applicable
+	
+		for (i = 0; i < level.width + 2; i++) { printf("-"); }
+	}
 	
 	printf("\n");
 	
 	for (i = 0; i < level.height; i++) {
 		
-		 printf("|"); //print left border
+		if (print_border) { printf("|"); } //print left border if applicable
 		
-		for (j = 0; j < level.width; j++) { cell_print(level.cells[i][j]); }
-		printf("|"); //print right border
+		for (j = 0; j < level.width; j++) { cell_print(level.cells[i][j]); } //print cell
+		
+		if (print_border) { printf("|"); } //print right border if applicable
+		
 		printf("\n");
 	}
 	
-	for (i = 0; i < level.width + 2; i++) { printf("-"); } //print bottom border
+	if (print_border) {  //print bottom border if applicable
+	
+		for (i = 0; i < level.width + 2; i++) { printf("-"); }
+	}
 	
 	printf("\n");
 	

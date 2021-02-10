@@ -1,4 +1,5 @@
 02/09/2021:
+	- Adding "--border" command argument to toggle printing a border around the generated level
 	- Updated README with program description, and a description of what is outputted
 	- Room generation finalized
 	- Base corridor generation working

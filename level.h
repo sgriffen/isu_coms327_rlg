@@ -39,4 +39,4 @@ int level_place_room(struct Level *level, struct Room *room);
 
 void level_generate_cooridor(struct Level *level, int start_y, int start_x, int end_y, int end_x);
 
-void level_print(struct Level level);
+void level_print(struct Level level, int print_border);
