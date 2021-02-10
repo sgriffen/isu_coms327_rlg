@@ -209,6 +209,11 @@ void level_generate_cooridor(struct Level *level, int start_y, int start_x, int 
 
 void level_generate_staircases(struct Level *level) {
 	
+	/*
+		1 up staircase is always placed at a random location in rooms[0]. Any more are randomly placed (excluding rooms[0] and rooms[num_rooms - 1])
+		1 down staircase is always placed at a random location in rooms[num_rooms-1].  Any more are randomly placed (excluding rooms[0] and rooms[num_rooms - 1])
+	*/
+	
 	int i = 0;
 	
 	int num_staircase_down = utils_rand_between(LEVEL_MIN_STAIRCASE_DOWN, LEVEL_MAX_STAIRCASE_DOWN, NULL);
@@ -217,7 +222,9 @@ void level_generate_staircases(struct Level *level) {
 	/* place down staircases */
 	for (i = 0; i < num_staircase_down; i++) {
 		
-		int room_index = utils_rand_between(0, level->num_rooms - 1, NULL);
+		int room_index = level->num_rooms-1;
+		if (i != 0) { room_index = utils_rand_between(1, level->num_rooms-2, NULL); }
+		
 		int stair_y = utils_rand_between(level->rooms[room_index].tl->y+ROOM_BORDER_WIDTH, level->rooms[room_index].br->y-ROOM_BORDER_WIDTH, NULL);
 		int stair_x = utils_rand_between(level->rooms[room_index].tl->x+ROOM_BORDER_WIDTH, level->rooms[room_index].br->x-ROOM_BORDER_WIDTH, NULL);
 		
@@ -227,7 +234,9 @@ void level_generate_staircases(struct Level *level) {
 	/* place up staircases */
 	for (i = 0; i < num_staircase_up; i++) {
 		
-		int room_index = utils_rand_between(0, level->num_rooms - 1, NULL);
+		int room_index = 0;
+		if (i != 0) { room_index = utils_rand_between(1, level->num_rooms-2, NULL); }
+		
 		int stair_y = utils_rand_between(level->rooms[room_index].tl->y+ROOM_BORDER_WIDTH, level->rooms[room_index].br->y-ROOM_BORDER_WIDTH, NULL);
 		int stair_x = utils_rand_between(level->rooms[room_index].tl->x+ROOM_BORDER_WIDTH, level->rooms[room_index].br->x-ROOM_BORDER_WIDTH, NULL);
 		

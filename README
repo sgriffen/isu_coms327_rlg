@@ -25,5 +25,6 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 			- notes: Printing a border results in an output that exceedes the common terminal size of 80x21 (80 horizontal units, 21 vertical units), but the level generated is still constrained to the 80x21 requirement
 			- example command: --border
 			
+			
 A command to run this application with all arguments defined may look as follows:
 	./rouge.o [--border]

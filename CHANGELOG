@@ -1,3 +1,7 @@
+02/10/2021:
+	- Changing staircase placement so that the "first" room in the level always has an "up" staircase, and the "last" room in the level always has a "down" staircase. Other staircases are randomly placed in the other rooms (if applicable)
+	- Adding a random chance function to utils.c that outputs true or false if the random number generated is less than the inputted number, achieving a "% chance" effect
+
 02/09/2021:
 	- Adding "--border" command argument to toggle printing a border around the generated level
 	- Updated README with program description, and a description of what is outputted
