@@ -4,8 +4,8 @@
 #include <string.h>
 
 /****** include custom libs ******/
-#include "utils.h"
 #include "cell.h"
+#include "utils.h"
 
 struct Cell cell_init(int y, int x) {
 	
@@ -32,7 +32,7 @@ struct Cell cell_init_rand(int y, int x) {
 	cell.meta_data = -1;
 	
 	cell.type = Wall;
-	cell.hardness = utils_rand_between(1, CELL_HARDNESS_MAX, NULL);
+	cell.hardness = utils_rand_between(CELL_HARDNESS_MIN+1, CELL_HARDNESS_MAX, NULL);
 	
 	return cell;
 }

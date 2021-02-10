@@ -1,11 +1,9 @@
 /******** include std libs ********/
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 /******* include custom libs ******/
+#include "level.h"
 #include "utils.h"
-#include "rouge.h"
 
 int main(int argc, char *argv[]) {
 	
