@@ -1,6 +1,17 @@
 Sean Griffen (griffens)
 
+
 This is my solution to homework 1.01, Dungeon Generation.
+It generates a "level" or "floor" that will eventually be one of many in a full Dungeon, complete with a random number of rooms with a random size (within the given constraints), cooridors connecting the rooms, and a small amount of up and down staircases.
+Right now, the "randomness" of the level is seeded by time(), so the generated level is only going to be different every second.
 
 
-To run the program, run the Makefile, and enter './rouge.o' followed by the specified arguments in the command window
+To run the program, run the Makefile, and enter './rouge.o'. There are no arguments currently for this program.
+
+Things to note:
+	- The level is constrained to the defined size 21x80 (21 vertival units, 80 horizontal units), but a border is printed making the total output bigger than 21x80
+	- A cell denoted as a Rock is printed as ' '
+	- A cell denoted as a Room is printed as '.'
+	- A cell denoted as a cooridor is printed as '#'
+	- A cell denoted as a up staircase is printed as '<'
+	- A cell denoted as a down staircase is printed as '>'
