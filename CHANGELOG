@@ -1,4 +1,11 @@
+02/11/2021:
+	- Turn in of final assignment 1.01 draft
+	- Updated README to explain how cooridor drawing works
+	- Changed cooridor drawing algorithm to draw to closest room not already in set of connected rooms, instead of drawing a direct path to the room next in the array of rooms, regardless of if it's already connected
+	
 02/10/2021:
+	- Initial submission of assignment 1.01
+	- Cooridors now have a 25% chance of deviating (up, down, left, or right) from the shortest path to the next room
 	- Changing staircase placement so that the "first" room in the level always has an "up" staircase, and the "last" room in the level always has a "down" staircase. Other staircases are randomly placed in the other rooms (if applicable)
 	- Adding a random chance function to utils.c that outputs true or false if the random number generated is less than the inputted number, achieving a "% chance" effect
 

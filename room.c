@@ -10,9 +10,11 @@
 
 /*********** global vars **********/
 
-struct Room room_init(int room_height, int room_width) {
+struct Room room_init(int index, int room_height, int room_width) {
 	
 	struct Room room;
+	
+	room.index = index;
 	
 	room.height = room_height;
 	room.width = room_width;
@@ -46,6 +48,51 @@ int h_rooms_intersect(struct Room room1, struct Room room2, int space_between) {
 	if ((room1.tl->x-space_between) > (room2.br->x+space_between) || (room2.tl->x-space_between) > (room1.br->x+space_between)) { return 0; }
 	
 	return 1;
+}
+
+struct Room room_contains_point(int num_rooms, struct Room rooms[], struct Cell cell) {
+	
+	int i = 0;
+	
+	for (i = 0; i < num_rooms; i++) {
+	
+		if (cell.y >= rooms[i].tl->y && cell.y <= rooms[i].br->y && cell.x >= rooms[i].tl->x && cell.x <= rooms[i].br->x) { return rooms[i]; }
+	}
+	
+	return room_init(-1, 0, 0);
+}
+
+struct Room* room_find_closest(int num_rooms, struct Room rooms[], int num_exclude, struct Room exclude_rooms[], struct Room *alpha) {
+	
+	int i = 0, j = 0;
+	
+	struct Room *closest;
+	if (alpha->index+1 >= num_rooms) { closest = &(rooms[0]); }
+	else { closest = &(rooms[alpha->index+1]); }
+		
+	for (i = 0; i < num_rooms; i++) {
+		
+		int room_excluded = 0;
+		
+		for (j = 0; j < num_exclude; j++) {
+			
+			if (room_is_same(exclude_rooms[j], rooms[i])) { room_excluded = 1; }
+		}
+		
+		if (!room_excluded && !room_is_same(rooms[i], *alpha)) {
+			
+			if (rooms_smallest_distance_y(rooms[i], *alpha) < rooms_smallest_distance_y(*closest, *alpha) && rooms_smallest_distance_x(rooms[i], *alpha) < rooms_smallest_distance_x(*closest, *alpha)) { closest = &(rooms[i]); }
+		}
+	}
+	
+	return closest;
+}
+
+int room_is_same(struct Room beta, struct Room alpha) {
+	
+	if (cell_is_same(*(beta.tl), *(alpha.tl)) && cell_is_same(*(beta.br), *(alpha.br))) { return 1; }
+	
+	return 0;
 }
 
 int rooms_smallest_distance_y(struct Room room1, struct Room room2) {

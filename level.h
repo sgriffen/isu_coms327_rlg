@@ -10,6 +10,7 @@
 #define LEVEL_MAX_STAIRCASE_UP 2
 #define LEVEL_MIN_STAIRCASE_DOWN 1
 #define LEVEL_MAX_STAIRCASE_DOWN 2
+#define LEVEL_MAX_CHANCE_COUNT 150
 
 /******* enums declarations *******/
 
@@ -17,6 +18,7 @@
 /******* struct declarations ******/
 struct Level {
 	
+	int print_height, print_width;
 	int height, width;
 	
 	int num_cells;

@@ -5,6 +5,8 @@
 /******* enums declarations *******/
 enum cell_type {
 	
+	Border_h,
+	Border_v,
 	Wall,
 	Room,
 	Cooridor,
@@ -28,4 +30,6 @@ struct Cell cell_init(int y, int x);
 
 struct Cell cell_init_rand(int y, int x);
 
-void cell_print(struct Cell cell);
+int cell_is_same(struct Cell beta, struct Cell alpha);
+
+void cell_print(struct Cell cell, int print_border);

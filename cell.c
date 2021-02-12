@@ -37,10 +37,17 @@ struct Cell cell_init_rand(int y, int x) {
 	return cell;
 }
 
-void cell_print(struct Cell cell) {
+int cell_is_same(struct Cell beta, struct Cell alpha) {
+	
+	if (beta.y == alpha.y && beta.x == alpha.x) { return 1; }
+	
+	return 0;
+}
+
+void cell_print(struct Cell cell, int print_border) {
 	
 	switch (cell.type) {
-		
+	
 	case Room:			//print Room cell type
 		
 		printf(".");
@@ -56,6 +63,16 @@ void cell_print(struct Cell cell) {
 	case Stair_down:	//print Stair_down cell type
 		
 		printf(">");
+		break;
+	case Border_h:		//print horizontal Border cell type if desired, else print a regular Wall type
+		
+		if (print_border) { printf("-"); }
+		else { printf(" "); }
+		break;
+	case Border_v: 		//print vertical Border cell type if desired, else print a regular Wall type
+	
+		if (print_border) { printf("|"); }
+		else { printf(" "); }
 		break;
 	default:			//print Wall cell type
 		
