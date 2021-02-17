@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <time.h>
 /******* include custom libs ******/
-#include "utils.h"
+#include "math_utils.h"
 
 int utils_rand_between(int lower_bound, int upper_bound, time_t *seed) {
 	

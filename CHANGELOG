@@ -1,3 +1,21 @@
+02/16/2021:
+	- Finilizing reading and writing dungeon to bitfile (ignorning endianness for now, using machine default)
+	- Creating function to read dungeon from bitfile
+
+02/15/2021:
+	- Creating function to write dungeon to bitfile
+	- Cleaning up code from previous assignment
+		- typedefing structs and enums
+		- adding correct cell hardness functionality (rooms and cooridors are hardness 0, dungeon border is hardness 255)
+		- renaming Level struct and files to Dungeon
+	- Renaming 
+	- Updating ituls functions from yesterday
+
+02/14/2021:
+	- Putting all files except rouge.c and rouge.h into src directory. Putting util files unto src/utils directory
+	- Adding file utils to read, write, and get file sizes (found in file_utils.c)
+	- Renaming utils.c to math_utils.c and math_utils.hardness
+
 02/11/2021:
 	- Turn in of final assignment 1.01 draft
 	- Updated README to explain how cooridor drawing works
