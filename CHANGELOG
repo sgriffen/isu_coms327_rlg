@@ -1,9 +1,9 @@
 02/18/2021:
-	- Turn in of final assignment 1.02 deaft
+	- Turn in of final assignment 1.02 draft
 	- Updated README from saying "homework 1.01 solution" to "homework 1.02 solution"
-	- Adding file writing function to read into multiple buffers
+	- Adding file writing function to write from an array of buffers
 	- Re-working file writing utility function to use a custom struct to pass pass in nmemb, read size, and a void* write buffer instead of passing all of these seperatly
-	- Adding file reading function to read into multiple buffers
+	- Adding file reading function to read into an array of buffers
 	- Re-working file reading utility function to use a custom struct to pass in nmemb, read size, and a void* read buffer instead of passing all of these seperatly
 	- Fixing known read bug with staircases
 	- Accounting for endinness

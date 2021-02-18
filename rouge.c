@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 			
 			f_name = (char*)malloc(sizeof(char) * strlen(argv[run_args[5][1]]));
 			f_name[sizeof(f_name)-1] = '\0';
-			strcpy(f_name, argv[run_args[4][1]]); 
+			strcpy(f_name, argv[run_args[5][1]]); 
 		}
 		
 		int write_invalid = fwrite_dungeon(dungeon, f_name);
@@ -212,7 +212,6 @@ int fread_dungeon(Dungeon *dungeon, char *f_name) {
 	f_read_offset += utils_fread_m(f_name, 7, 0, f_buffer, 0, 1);
 	f_rooms = malloc(f_buffer[7].size * (f_num_rooms*4));
 	f_buffer[7].buffer = f_rooms;
-	printf("%ld %ld\n", sizeof(f_buffer[7].buffer), sizeof(f_rooms));
 	f_buffer[7].nmemb = f_num_rooms * 4;
 	f_read_offset += utils_fread_m(f_name, 9, 7, f_buffer, f_read_offset, 1);
 	f_stairs_up = malloc(f_buffer[9].size * (f_num_stairs_up*2));
@@ -224,7 +223,7 @@ int fread_dungeon(Dungeon *dungeon, char *f_name) {
 	f_buffer[11].nmemb = f_num_stairs_up * 2;
 	f_read_offset += utils_fread(f_name, f_buffer[11], f_read_offset, 1);
 	
-	printf("debug -- file read complete\n");
+//	printf("debug -- file read complete\n");
 	
 	/* set dungeon cell hardness */
 	for (i = 0; i < dungeon->height; i++) {
@@ -237,7 +236,7 @@ int fread_dungeon(Dungeon *dungeon, char *f_name) {
 			else if (j < DUNGEON_BORDER_WIDTH || j >= dungeon->width-DUNGEON_BORDER_WIDTH) { dungeon->cells[i][j].type = CellType_Border_v; }
 		}
 	}
-	printf("debug -- set cell hardness\n");
+//	printf("debug -- set cell hardness\n");
 	/* mark and place dungeon rooms */
 	dungeon->num_rooms = f_num_rooms;
 	dungeon->rooms = (Room*)malloc(sizeof(Room) * f_num_rooms);
@@ -262,7 +261,7 @@ int fread_dungeon(Dungeon *dungeon, char *f_name) {
 			}
 		}
 	}
-	printf("debug -- marked rooms\n");
+//	printf("debug -- marked rooms\n");
 	/* mark dungeon cooridors */
 	for (i = 0; i < dungeon->height; i++) {
 		for (j = 0; j < dungeon->width; j++) {
@@ -270,7 +269,7 @@ int fread_dungeon(Dungeon *dungeon, char *f_name) {
 			if (dungeon->cells[i][j].hardness == 0 && dungeon->cells[i][j].type != CellType_Room) { dungeon->cells[i][j].type = CellType_Cooridor; }
 		}
 	}
-	printf("debug -- marked cooridors\n");
+//	printf("debug -- marked cooridors\n");
 	/* place up staircases in dungeon */
 	dungeon->num_staircases_up = f_num_stairs_up;
 	dungeon->staircases_up = (Cell**)malloc(sizeof(Cell*) * f_num_stairs_up);
@@ -280,7 +279,7 @@ int fread_dungeon(Dungeon *dungeon, char *f_name) {
 		dungeon->cells[f_stairs_up[i+1]][f_stairs_up[i]].hardness = 0;
 		dungeon->staircases_up[i/2] = &(dungeon->cells[f_stairs_up[i+1]][f_stairs_up[i]]);
 	}
-	printf("debug -- marked up staircases\n");
+//	printf("debug -- marked up staircases\n");
 	/* place down staircases in dungeon */
 	dungeon->num_staircases_down = f_num_stairs_down;
 	dungeon->staircases_down = (Cell**)malloc(sizeof(Cell*) * f_num_stairs_down);
@@ -290,29 +289,29 @@ int fread_dungeon(Dungeon *dungeon, char *f_name) {
 		dungeon->cells[f_stairs_down[i+1]][f_stairs_down[i]].hardness = 0;
 		dungeon->staircases_down[i/2] = &(dungeon->cells[f_stairs_down[i+1]][f_stairs_down[i]]);
 	}
-	printf("debug -- marked down staircases\n");
+//	printf("debug -- marked down staircases\n");
 	/* place pc in dungeon */
 	Character pc = character_init(&(dungeon->cells[f_pc_y][f_pc_x]), CharacterType_PC);
 	dungeon->pc = pc;	
-	printf("debug -- placed PC\n");
+//	printf("debug -- placed PC\n");
 	
-	printf("debug -- file read offset: [%ld]\n", f_read_offset);
-	printf("debug -- f type: [%s]\n", f_type);
-	printf("debug -- f marker: [%d]\n", f_marker);
-	printf("debug -- f size: [%d]\n", f_size);
-	printf("debug -- pc x: [%d]\n", f_pc_x);
-	printf("debug -- pc y: [%d]\n", f_pc_y);
-	printf("debug -- num rooms: [%d]\n", f_num_rooms);
-	printf("debug -- num stairs up: [%d]\n", f_num_stairs_up);
-	printf("debug -- num stairs down: [%d]\n", f_num_stairs_down);
+//	printf("debug -- file read offset: [%ld]\n", f_read_offset);
+//	printf("debug -- f type: [%s]\n", f_type);
+//	printf("debug -- f marker: [%d]\n", f_marker);
+//	printf("debug -- f size: [%d]\n", f_size);
+//	printf("debug -- pc x: [%d]\n", f_pc_x);
+//	printf("debug -- pc y: [%d]\n", f_pc_y);
+//	printf("debug -- num rooms: [%d]\n", f_num_rooms);
+//	printf("debug -- num stairs up: [%d]\n", f_num_stairs_up);
+//	printf("debug -- num stairs down: [%d]\n", f_num_stairs_down);
 	
 	return 0;
 }
 
 int fwrite_dungeon(Dungeon dungeon, char *f_name) {
 	
-//	int i = 0, j = 0, k = 0;
-	
+	int i = 0, j = 0, k = 0;
+//	size_t f_write_len = 0;
 	struct stat st = {0};
 	
 	if (strlen(f_name) < 1) {
@@ -328,133 +327,137 @@ int fwrite_dungeon(Dungeon dungeon, char *f_name) {
 	
 //	printf("debug -- file name: [%s]\n", f_name);
 	
-	/* prepare dungeon information for writing 
+	/* prepare dungeon information for writing */
 	char *f_type = "RLG327-S2021";
 	uint32_t f_marker = 0;
-	uint32_t f_size = 255;
+	uint32_t f_size = 0;
 	uint8_t f_pc_x = dungeon.pc.location->x;
 	uint8_t f_pc_y = dungeon.pc.location->y;
-	uint8_t *f_cells_hardness = (uint8_t*)malloc(sizeof(uint8_t) * dungeon.num_cells);  
+	uint8_t *f_cells = (uint8_t*)malloc(sizeof(uint8_t) * dungeon.num_cells);  
+	uint16_t f_num_rooms = dungeon.num_rooms;
+	uint8_t *f_rooms;
+	uint16_t f_num_stair_up = dungeon.num_staircases_up;
+	uint8_t *f_stair_up;
+	uint16_t f_num_stair_down = dungeon.num_staircases_down;
+	uint8_t *f_stair_down;
+	
 	for (i = 0; i < dungeon.height; i++) {
 		for(j = 0; j < dungeon.width; j++) {
 		
-			f_cells_hardness[k] = dungeon.cells[i][j].hardness;
+			f_cells[k] = dungeon.cells[i][j].hardness;
 			k++;
 		}
 	}
-	uint16_t f_num_rooms = dungeon.num_rooms;
-	uint8_t *f_room_info = (uint8_t*)malloc(sizeof(uint8_t) * (dungeon.num_rooms*4));
-	for (i = 0; i < (dungeon.num_rooms*4); i+=4) {
+	f_rooms = (uint8_t*)malloc(sizeof(uint8_t) * (f_num_rooms*4));
+	for (i = 0; i < (f_num_rooms*4); i+=4) {
 		
-		f_room_info[i] = dungeon.rooms[i/4].tl->x;
-		f_room_info[i+1] = dungeon.rooms[i/4].tl->y;
-		f_room_info[i+2] = dungeon.rooms[i/4].width;
-		f_room_info[i+3] = dungeon.rooms[i/4].height;
+		f_rooms[i] = dungeon.rooms[i/4].tl->x;
+		f_rooms[i+1] = dungeon.rooms[i/4].tl->y;
+		f_rooms[i+2] = dungeon.rooms[i/4].width;
+		f_rooms[i+3] = dungeon.rooms[i/4].height;
 	}
-	uint16_t f_num_staircase_up = dungeon.num_staircases_up;
-	uint8_t *f_staircases_up = (uint8_t*)malloc(sizeof(uint8_t) * (dungeon.num_staircases_up*2));
-	for (i = 0; i < (dungeon.num_staircases_up*2); i+=2) {
+	f_stair_up = (uint8_t*)malloc(sizeof(uint8_t) * (f_num_stair_up*2));
+	for (i = 0; i < (f_num_stair_up*2); i+=2) {
 		
-		f_staircases_up[i] = dungeon.staircases_up[i/2]->x;
-		f_staircases_up[i+1] = dungeon.staircases_up[i/2]->y;
+		f_stair_up[i] = dungeon.staircases_up[i/2]->x;
+		f_stair_up[i+1] = dungeon.staircases_up[i/2]->y;
 	}
-	uint16_t f_num_staircase_down = dungeon.num_staircases_down;
-	uint8_t *f_staircases_down = (uint8_t*)malloc(sizeof(uint8_t) * (dungeon.num_staircases_down*2));
-	for (i = 0; i < (dungeon.num_staircases_down*2); i+=2) {
+	f_stair_down = (uint8_t*)malloc(sizeof(uint8_t) * (f_num_stair_down*2));
+	for (i = 0; i < (f_num_stair_down*2); i+=2) {
 		
-		f_staircases_down[i] = dungeon.staircases_down[i/2]->x;
-		f_staircases_down[i+1] = dungeon.staircases_down[i/2]->y;
+		f_stair_down[i] = dungeon.staircases_down[i/2]->x;
+		f_stair_down[i+1] = dungeon.staircases_down[i/2]->y;
 	}
+	FileWriteBuffer f_buffer[] = {
+		
+		{
+			.buffer = f_type,
+			.nmemb 	= strlen(f_type),
+			.size 	= sizeof(f_type[0])
+			
+		},
+		{
+			.buffer = &f_marker,
+			.nmemb 	= 1,
+			.size 	= sizeof(f_marker)
+			
+		},
+		{
+			.buffer = &f_size,
+			.nmemb 	= 1,
+			.size 	= sizeof(f_size)
+			
+		},
+		{
+			.buffer = &f_pc_x,
+			.nmemb 	= 1,
+			.size 	= sizeof(f_pc_x)
+			
+		},
+		{
+			.buffer = &f_pc_y,
+			.nmemb	= 1,
+			.size 	= sizeof(f_pc_y)
+			
+		},
+		{
+			.buffer = f_cells,
+			.nmemb 	= dungeon.num_cells,
+			.size 	= sizeof(f_cells[0])
+			
+		},
+		{
+			.buffer = &f_num_rooms,
+			.nmemb 	= 1,
+			.size 	= sizeof(f_num_rooms)
+			
+		},
+		{
+			.buffer = f_rooms,
+			.nmemb 	= f_num_rooms * 4,
+			.size 	= sizeof(f_rooms[0])
+			
+		},
+		{
+			.buffer = &f_num_stair_up,
+			.nmemb 	= 1,
+			.size 	= sizeof(f_num_stair_up)
+			
+		},
+		{
+			.buffer = f_stair_up,
+			.nmemb 	= f_num_stair_up*2,
+			.size 	= sizeof(f_stair_up[0])
+			
+		},
+		{
+			.buffer = &f_num_stair_down,
+			.nmemb 	= 1,
+			.size 	= sizeof(f_num_stair_down)
+			
+		},
+		{
+			.buffer = f_stair_down,
+			.nmemb 	= f_num_stair_down * 2,
+			.size 	= sizeof(f_stair_down[0])
+			
+		}
+	};
 	
-	 write dungeon to file, keeping track of the size of the file as it increases 
-	size_t f_running_size = 0;
-	f_running_size += utils_fwrite(f_name, f_type, sizeof(char), strlen(f_type), 0, 1);
-	if (f_running_size < 1) {
-		
-		if (f_running_size < 0) { return 1; }
-		return -1; 
-	}
-//	printf("debug -- file write offset: [%ld]\n", f_running_size);
-	f_running_size += utils_fwrite(f_name, &f_marker, sizeof(uint32_t), 1, f_running_size, 0);
-	if (f_running_size < 1) {
-		
-		if (f_running_size < 0) { return 1; }
-		return -2; 
-	}
-//	printf("debug -- file write offset: [%ld]\n", f_running_size);
-	f_running_size += utils_fwrite(f_name, &f_size, sizeof(uint32_t), 1, f_running_size, 0);
-	if (f_running_size < 1) {
-		
-		if (f_running_size < 0) { return 1; }
-		return -3; 
-	}
-//	printf("debug -- file write offset: [%ld]\n", f_running_size);
-	f_running_size += utils_fwrite(f_name, &f_pc_x, sizeof(uint8_t), 1, f_running_size, 0);
-	if (f_running_size < 1) {
-		
-		if (f_running_size < 0) { return 1; }
-		return -4; 
-	}
-	f_running_size += utils_fwrite(f_name, &f_pc_y, sizeof(uint8_t), 1, f_running_size, 0);
-	if (f_running_size < 1) {
-		
-		if (f_running_size < 0) { return 1; }
-		return -5; 
-	}
-//	printf("debug -- file write offset: [%ld]\n", f_running_size);
-	f_running_size += utils_fwrite(f_name, f_cells_hardness, sizeof(uint8_t), (sizeof(f_cells_hardness[0])*dungeon.num_cells), f_running_size, 0);
-	if (f_running_size < 1) {
-		
-		if (f_running_size < 0) { return 1; }
-		return -6; 
-	}
-//	printf("debug -- file write offset: [%ld]\n", f_running_size);
-	f_running_size += utils_fwrite(f_name, &f_num_rooms, sizeof(uint16_t), 1, f_running_size, 0);
-	if (f_running_size < 1) {
-		
-		if (f_running_size < 0) { return 1; }
-		return -7; 
-	}
-//	printf("debug -- file write offset: [%ld]\n", f_running_size);
-	f_running_size += utils_fwrite(f_name, f_room_info, sizeof(uint8_t), (sizeof(f_room_info[0])*(f_num_rooms*4)), f_running_size, 0);
-	if (f_running_size < 1) {
-		
-		if (f_running_size < 0) { return 1; }
-		return -8; 
-	}
-//	printf("debug -- file write offset: [%ld]\n", f_running_size);
-	f_running_size += utils_fwrite(f_name, &f_num_staircase_up, sizeof(uint16_t), 1, f_running_size, 0);
-	if (f_running_size < 1) {
-		
-		if (f_running_size < 0) { return 1; }
-		return -9; 
-	}
-//	printf("debug -- file write offset: [%ld]\n", f_running_size);
-	f_running_size += utils_fwrite(f_name, f_staircases_up, sizeof(uint8_t), (sizeof(f_staircases_up[0]*(f_num_staircase_up*2))), f_running_size, 0);
-	if (f_running_size < 1) {
-		
-		if (f_running_size < 0) { return 1; }
-		return -10; 
-	}
-//	printf("debug -- file write offset: [%ld]\n", f_running_size);
-	f_running_size += utils_fwrite(f_name, &f_num_staircase_down, sizeof(uint16_t), 1, f_running_size, 0);
-	if (f_running_size < 1) {
-		
-		if (f_running_size < 0) { return 1; }
-		return -11; 
-	}
-//	printf("debug -- file write offset: [%ld]\n", f_running_size);
-	f_running_size += utils_fwrite(f_name, f_staircases_down, sizeof(uint8_t), (sizeof(f_staircases_down[0]*(f_num_staircase_down*2))), f_running_size, 0);
-	if (f_running_size < 1) {
-		
-		if (f_running_size < 0) { return 1; }
-		return -12; 
-	}
-//	printf("debug -- file write offset: [%ld]\n", f_running_size);
-	
+	/* write dungeon to file, keeping track of the size of the file as it increases */
+	utils_fwrite_m(f_name, 12, 0, f_buffer, 0, 1, 1);
+//	f_write_len = utils_fwrite_m(f_name, 12, 0, f_buffer, 0, 1, 1);
 	f_size = utils_fsize(f_name, 1);
-	utils_fwrite(f_name, &f_size, sizeof(uint32_t), 1, strlen(f_type)+sizeof(f_marker), 0);
-//	printf("debug -- wrote [%d] bytes\n", f_size);
-*/
+	FileWriteBuffer f_size_buffer = {
+		
+		.buffer = &f_size,
+		.nmemb 	= 1,
+		.size = sizeof(uint32_t)
+	};
+	utils_fwrite(f_name, f_size_buffer, (sizeof(char) * strlen(f_type))+(sizeof(uint32_t)), 0, 1);
+	
+	/* write dungeon to file, keeping track of the size of the file as it increases */
+//	printf("debug -- file write [%ld] bytes\n", f_write_len);
+	
 	return 0;
 }

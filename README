@@ -25,7 +25,7 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 		- arguments: <b | f>
 		- description: 
 			- arg = <b>: Prints a dungeon border
-			- arg = <f>: Rocks are printed as unicode blocks, increasing amount block is filled in as hardness increases. Rooms and cooridors are printed as empty spaces to contrast filled in rocks
+			- arg = <f>: Rocks are printed as unicode blocks, increasing shade of block as hardness increases. Rooms and cooridors are printed as empty spaces to contrast filled in rocks
 		- notes: 
 		- example command: --border f
 	- Load dungeon from file:

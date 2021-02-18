@@ -36,7 +36,7 @@ size_t utils_fread(const char *f_name, FileReadBuffer f_buffer, long int read_at
 	if (f_read_len == f_buffer.nmemb) { f_read_total += f_read_len * f_buffer.size; }
 	else { return 0; }
 	
-	printf("debug -- file read size: [%ld]   file read length: [%ld]   file read total: [%ld]\n", f_buffer.size, f_read_len, f_read_total);
+//	printf("debug -- file read size: [%ld]   file read length: [%ld]   file read total: [%ld]\n", f_buffer.size, f_read_len, f_read_total);
 	
 	if (endian_flag && f_buffer.size > sizeof(uint8_t)) { //if endianness matters, convert buffer.buffer from big endian to host default
 	
