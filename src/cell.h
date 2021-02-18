@@ -34,8 +34,8 @@ typedef struct {
 #endif /* DUNGEON_H */
 
 /****** function declarations *****/
-Cell cell_init(uint8_t y, uint8_t x, uint8_t hardness);
+Cell cell_init(uint8_t y, uint8_t x, int hardness);
 
 int cell_is_same(Cell beta, Cell alpha);
 
-void cell_print(Cell cell, int print_border);
+void cell_print(Cell cell, int print_type, int print_color);

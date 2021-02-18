@@ -1,9 +1,28 @@
+02/18/2021:
+	- Turn in of final assignment 1.02 deaft
+	- Updated README from saying "homework 1.01 solution" to "homework 1.02 solution"
+	- Adding file writing function to read into multiple buffers
+	- Re-working file writing utility function to use a custom struct to pass pass in nmemb, read size, and a void* write buffer instead of passing all of these seperatly
+	- Adding file reading function to read into multiple buffers
+	- Re-working file reading utility function to use a custom struct to pass in nmemb, read size, and a void* read buffer instead of passing all of these seperatly
+	- Fixing known read bug with staircases
+	- Accounting for endinness
+
+02/17/2021:
+	- Known bug: When loading staircases, sometimes down staircases get lost, not sure why
+	- Updating README with new run command flag descriptions
+	- Adding [--color] flag to toggle printing PC and NPCs in color
+	- Changing [--border] flag to [--print] flag with arguments <b | f> to wither print the dungeon with a border (as before) or print the dungeon with rocks filled in and rooms/cooridors as empty spaces
+
 02/16/2021:
 	- Finilizing reading and writing dungeon to bitfile (ignorning endianness for now, using machine default)
+	- Adding color printing: green is the PC, cyan is a staircase. Will add more later
+	- Adding character struct to base PC and NPC off of
 	- Creating function to read dungeon from bitfile
 
 02/15/2021:
 	- Creating function to write dungeon to bitfile
+	- Printing PC and NPCs in color
 	- Cleaning up code from previous assignment
 		- typedefing structs and enums
 		- adding correct cell hardness functionality (rooms and cooridors are hardness 0, dungeon border is hardness 255)

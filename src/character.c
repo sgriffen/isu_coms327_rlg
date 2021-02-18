@@ -18,17 +18,21 @@ Character character_init(Cell *loc, CharacterType type) {
 	return character;
 }
 
-void character_print(Character character) {
+void character_print(Character character, int print_color) {
+	
+	char *color = "\x1b[97m";
 	
 	switch (character.type) {
 		
 	case CharacterType_PC: 	//print PC character type
 		
-		printf("%s%c%s", "\x1b[92m", '@', "\x1b[0m"); //color, char, reset-color
+		if (print_color) { color = "\x1b[92m"; }
+		printf("%s%c%s", color, '@', "\x1b[0m"); //color, char, reset-color
 		break;
 	default :				//print NPC character type
 		
-		printf("%s%c%s", "\x1b[31m", '&', "\x1b[0m"); //color, char, reset-color
+		if (print_color) { color = "\x1b[31m"; }
+		printf("%s%c%s", color, '&', "\x1b[0m"); //color, char, reset-color
 		break;
 	}
 	

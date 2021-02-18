@@ -70,4 +70,4 @@ void dungeon_generate_pc(Dungeon *dungeon);
 
 void dungeon_generate_npcs(Dungeon *dungeon);
 
-void dungeon_print(Dungeon dungeon, int print_border);
+void dungeon_print(Dungeon dungeon, int print_type, int print_color);

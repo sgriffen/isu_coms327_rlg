@@ -27,6 +27,6 @@ typedef struct {
 /****** function declarations *****/
 Character character_init(Cell *loc, CharacterType type);
 
-void character_print(Character character);
+void character_print(Character character, int print_color);
 
 #endif /* CHARACTER_H */

@@ -30,12 +30,14 @@ void dungeon_init(Dungeon *dungeon, uint8_t dungeon_height, uint8_t dungeon_widt
 			
 			dungeon->cells[i][j] = cell_init(i, j, -1);
 			
+//			printf("debug -- cell hardness: [%d]\n", dungeon->cells[i][j].hardness);
+			
 			if (i < DUNGEON_BORDER_WIDTH || i >= dungeon->height-DUNGEON_BORDER_WIDTH) {
 				
 				dungeon->cells[i][j].type = CellType_Border_h;
 				dungeon->cells[i][j].hardness = 255;
 			}
-			else if (j < DUNGEON_BORDER_WIDTH || j >= dungeon->width-DUNGEON_BORDER_WIDTH) {
+			if (j < DUNGEON_BORDER_WIDTH || j >= dungeon->width-DUNGEON_BORDER_WIDTH) {
 				
 				dungeon->cells[i][j].type = CellType_Border_v;
 				dungeon->cells[i][j].hardness = 255;
@@ -76,7 +78,7 @@ void dungeon_mem_init(Dungeon *dungeon, uint8_t dungeon_height, uint8_t dungeon_
     for(i = 0; i < dungeon->height; i++) {
 		
 		dungeon->cells[i] = (Cell*)malloc(sizeof(Cell) * dungeon->width); 
-		for (j = 0; j < dungeon->width; j++) { dungeon->cells[i][j] = cell_init(i, j, 0); }
+		for (j = 0; j < dungeon->width; j++) { dungeon->cells[i][j] = cell_init(i, j, 1); }
 	}
 	
 	dungeon->num_rooms = 0;
@@ -86,8 +88,6 @@ void dungeon_mem_init(Dungeon *dungeon, uint8_t dungeon_height, uint8_t dungeon_
 	dungeon->staircases_up = NULL;
 	dungeon->num_staircases_down = 0;
 	dungeon->staircases_down = NULL;
-	
-	
 	
 	dungeon->num_npcs = 0;
 	dungeon->npcs = NULL;
@@ -422,7 +422,7 @@ void dungeon_generate_npcs(Dungeon *dungeon) {
 	return;
 }
 
-void dungeon_print(Dungeon dungeon, int print_border) {
+void dungeon_print(Dungeon dungeon, int print_type, int print_color) {
 	
 	int i = 0, j = 0, k = 0;
 
@@ -436,7 +436,7 @@ void dungeon_print(Dungeon dungeon, int print_border) {
 			if (dungeon.pc.location->y == i && dungeon.pc.location->x == j) { //print pc
 
 				cell_empty = 0;
-				character_print(dungeon.pc);
+				character_print(dungeon.pc, print_color);
 			}
 			for (k = 0; k < dungeon.num_npcs; k++) { //print npcs
 				
@@ -444,10 +444,10 @@ void dungeon_print(Dungeon dungeon, int print_border) {
 					
 					cell_empty = 0;
 					
-					character_print(dungeon.npcs[k]);
+					character_print(dungeon.npcs[k], print_color);
 				}
 			}
-			if (cell_empty) { cell_print(dungeon.cells[i][j], print_border); }
+			if (cell_empty) { cell_print(dungeon.cells[i][j], print_type, print_color); }
 		}
 		
 		printf("\n");
