@@ -7,10 +7,11 @@
 
 /*********** global vars **********/
 
-Character character_init(Cell *loc, CharacterType type) {
+Character character_init(uint32_t id, Cell *loc, CharacterType type) {
 	
 	Character character;
 	
+	character.id = id;
 	character.location = loc;
 	character.type = type;
 	character.meta_data = -1;

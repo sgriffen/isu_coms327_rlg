@@ -291,7 +291,7 @@ int fread_dungeon(Dungeon *dungeon, char *f_name) {
 	}
 //	printf("debug -- marked down staircases\n");
 	/* place pc in dungeon */
-	Character pc = character_init(&(dungeon->cells[f_pc_y][f_pc_x]), CharacterType_PC);
+	Character pc = character_init(0, &(dungeon->cells[f_pc_y][f_pc_x]), CharacterType_PC);
 	dungeon->pc = pc;	
 //	printf("debug -- placed PC\n");
 	

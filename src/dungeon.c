@@ -89,6 +89,7 @@ void dungeon_mem_init(Dungeon *dungeon, uint8_t dungeon_height, uint8_t dungeon_
 	dungeon->num_staircases_down = 0;
 	dungeon->staircases_down = NULL;
 	
+	dungeon->npc_id_next = 1;
 	dungeon->num_npcs = 0;
 	dungeon->npcs = NULL;
 	
@@ -247,6 +248,8 @@ void dungeon_generate_cooridor(Dungeon *dungeon, int start_y, int start_x, int e
 	
 //	float step_deviation_chance = 25.0;
 	int step = 0;
+	int step_prev_y = 0;
+	int step_prev_x = 0;
 	int step_count_y = 0;
 	int step_count_x = 0;
 	int delta_y = end_y - start_y;
@@ -267,7 +270,7 @@ void dungeon_generate_cooridor(Dungeon *dungeon, int start_y, int start_x, int e
 		if (delta_y > 0) { //if y target is below current y, increase y coordinate
 			
 			step = 1;
-//			if (utils_rand_chance(step_deviation_chance, NULL) && start_y-1 > dungeon->volitile_height && step_count_y < DUNGEON_MAX_CHANCE_COUNT) { step = -1; }
+			if (step_prev_y != 0 && step_prev_x != 0 && dungeon->cells[start_y+step][start_x].hardness > dungeon->cells[start_y][start_x].hardness) { step = 0; } //if the cell currently stepping to has a hardness greater than the 1 currently on and last round a new cooridor was made, do not step there
 			
 			start_y += step;
 			step_count_y++;
@@ -275,24 +278,28 @@ void dungeon_generate_cooridor(Dungeon *dungeon, int start_y, int start_x, int e
 		else if (delta_y < 0) { //if y target is above current y, decrease y coordinate 
 		
 			step = -1;
-//			if (utils_rand_chance(step_deviation_chance, NULL) && start_y+1 < dungeon->volitile_height && step_count_y < DUNGEON_MAX_CHANCE_COUNT) { step = 1; }
-			
-			start_y += step;
-			step_count_y++;
-		} else { //random chance of adding or subtracting 1 from delta_y
-			
-			step = 0;
-//			if (utils_rand_chance(step_deviation_chance, NULL) && start_y-1 > dungeon->volitile_height) { step = -1; }
-//			if (utils_rand_chance(step_deviation_chance, NULL) && start_y+1 < dungeon->volitile_height) { step = 1; }
+			if (step_prev_y != 0 && step_prev_x != 0 && dungeon->cells[start_y+step][start_x].hardness > dungeon->cells[start_y][start_x].hardness) { step = 0; } //if the cell currently stepping to has a hardness greater than the 1 currently on and last round a new cooridor was made, do not step there
 			
 			start_y += step;
 			step_count_y++;
 		}
-		
+		step_prev_y = step;
 		if (delta_x > 0) { //if x target is right of current x, increase x coordinate
 		
 			step = 1;
-//			if (utils_rand_chance(step_deviation_chance, NULL) && start_x-1 > dungeon->volitile_width && step_count_x < DUNGEON_MAX_CHANCE_COUNT) { step = -1; }
+			if (step_prev_y != 0 && step_prev_x != 0 && dungeon->cells[start_y][start_x+step].hardness > dungeon->cells[start_y][start_x].hardness) { step = 0; } //if the cell currently stepping to has a hardness greater than the 1 currently on and last round a new cooridor was made, do not step there
+			if (step_prev_y != 0 && step != 0) { //if stepping diagonally, fill in the corner cell
+				
+				Cell *corner = NULL;
+				if (utils_rand_chance(0.50, NULL)) { corner = &(dungeon->cells[start_y][start_x]); }
+				else { corner = &(dungeon->cells[start_y-step_prev_y][start_x+step]); }
+				
+				if (corner->type != CellType_Room) {
+			
+					corner->type = CellType_Cooridor; 
+					corner->hardness = 0; 
+				}
+			}
 			
 			start_x += step;
 			step_count_x++;
@@ -300,19 +307,24 @@ void dungeon_generate_cooridor(Dungeon *dungeon, int start_y, int start_x, int e
 		else if (delta_x < 0) { //if x target is left of current x, decrease x coordinate
 		
 			step = -1;
-//			if (utils_rand_chance(step_deviation_chance, NULL) && start_x+1 < dungeon->volitile_width && step_count_x < DUNGEON_MAX_CHANCE_COUNT) { step = 1; }
+			if (step_prev_y != 0 && step_prev_x != 0 && dungeon->cells[start_y][start_x+step].hardness > dungeon->cells[start_y][start_x].hardness) { step = 0; } //if the cell currently stepping to has a hardness greater than the 1 currently on and last round a new cooridor was made, do not step there
+			if (step_prev_y != 0 && step != 0) { //if stepping diagonally, fill in the corner cell
+				
+				Cell *corner = NULL;
+				if (utils_rand_chance(0.50, NULL)) { corner = &(dungeon->cells[start_y][start_x]); }
+				else { corner = &(dungeon->cells[start_y-step_prev_y][start_x+step]); }
+				
+				if (corner->type != CellType_Room) {
 			
-			start_x += step;
-			step_count_x++;
-		} else { //random chance of adding or subtracting 1 from delta_y
-			
-			step = 0;
-//			if (utils_rand_chance(step_deviation_chance, NULL) && start_x-1 > dungeon->volitile_width && step_count_x < DUNGEON_MAX_CHANCE_COUNT) { step = -1; }
-//			if (utils_rand_chance(step_deviation_chance, NULL) && start_x+1 < dungeon->volitile_width && step_count_x < DUNGEON_MAX_CHANCE_COUNT) { step = 1; }
+					corner->type = CellType_Cooridor; 
+					corner->hardness = 0; 
+				}
+			}
 			
 			start_x += step;
 			step_count_x++;
 		}
+		step_prev_x = step;
 		
 		delta_y = end_y - start_y;
 		delta_x = end_x - start_x;
@@ -389,7 +401,7 @@ void dungeon_generate_pc(Dungeon *dungeon) {
 	int loc_y = utils_rand_between(dungeon->rooms[0].tl->y+ROOM_BORDER_WIDTH, dungeon->rooms[0].br->y-ROOM_BORDER_WIDTH, NULL);
 	int loc_x = utils_rand_between(dungeon->rooms[0].tl->x+ROOM_BORDER_WIDTH, dungeon->rooms[0].br->x-ROOM_BORDER_WIDTH, NULL);
 	
-	pc = character_init(&(dungeon->cells[loc_y][loc_x]), CharacterType_PC);
+	pc = character_init(0, &(dungeon->cells[loc_y][loc_x]), CharacterType_PC);
 	dungeon->pc = pc;
 	
 	return;
@@ -413,7 +425,8 @@ void dungeon_generate_npcs(Dungeon *dungeon) {
 		int loc_y = utils_rand_between(dungeon->rooms[room_index].tl->y+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br->y-ROOM_BORDER_WIDTH, NULL);
 		int loc_x = utils_rand_between(dungeon->rooms[room_index].tl->x+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br->x-ROOM_BORDER_WIDTH, NULL);
 		
-		npcs[i] = character_init(&(dungeon->cells[loc_y][loc_x]), CharacterType_NPC);
+		npcs[i] = character_init(dungeon->npc_id_next, &(dungeon->cells[loc_y][loc_x]), CharacterType_NPC);
+		dungeon->npc_id_next++;
 	}
 	
 	dungeon->num_npcs = num_npcs;

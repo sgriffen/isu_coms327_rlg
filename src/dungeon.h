@@ -45,6 +45,7 @@ typedef struct {
 	
 	Character pc;
 	
+	uint32_t npc_id_next;
 	uint16_t num_npcs;
 	Character *npcs;
 } Dungeon;
