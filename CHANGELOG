@@ -1,3 +1,16 @@
+02/24/2021:
+	- Replacing cell references in code (for rooms and PC for example) with a (y, x) coordinate reference
+	- Replacing most of the 'malloc' calls with 'calloc'
+
+02/23/2021:
+	- Adding algorithm to find shortest path in 'pathfinder.c'. Currently not working, but code is there
+	- Combining --load-from and --load run arguments into 1 argument and option pair. Doing same for --save-to and --save
+	- Adding short-hand run argument versions for current long-form arguments (--l = --load, --s = --save, --p = --print)
+	- Finilizing priority queue implementation and adding test executables to test certain utility functionality
+
+02/22/2021:
+	- Creation of queue.c and queue.h files to create a priority queue system for use in calculating the shortest path to the player
+
 02/18/2021:
 	- Turn in of final assignment 1.02 draft
 	- Updated README from saying "homework 1.01 solution" to "homework 1.02 solution"

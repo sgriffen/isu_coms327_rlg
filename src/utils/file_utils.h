@@ -1,3 +1,6 @@
+#ifndef FILE_UTILS_H
+#define FILE_UTILS_H
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -18,6 +21,8 @@ typedef struct {
 	size_t nmemb;
 	size_t size;
 } FileWriteBuffer;
+
+#endif /* FILE_UTILS_H */
 
 /****** function declarations *****/
 FILE* utils_fopen(const char *f_name, char *mode);

@@ -50,12 +50,12 @@ typedef struct {
 	Character *npcs;
 } Dungeon;
 
-#endif /* DUNGEON_H */
-
 /****** function declarations *****/
 void dungeon_init(Dungeon *dungeon, uint8_t dungeon_height, uint8_t dungeon_width);
 
 void dungeon_mem_init(Dungeon *dungeon, uint8_t dungeon_height, uint8_t dungeon_width);
+
+void dungeon_generate_cells(Dungeon *dungeon);
 
 void dungeon_generate_rooms(Dungeon *dungeon);
 
@@ -63,7 +63,7 @@ int dungeon_place_room(Dungeon *dungeon, Room *room);
 
 void dungeon_generate_cooridors(Dungeon *dungeon);
 
-void dungeon_generate_cooridor(Dungeon *dungeon, int start_y, int start_x, int end_y, int end_x);
+void dungeon_generate_cooridor(Dungeon *dungeon, Coordinate start, Coordinate end);
 
 void dungeon_generate_staircases(Dungeon *dungeon);
 
@@ -71,4 +71,6 @@ void dungeon_generate_pc(Dungeon *dungeon);
 
 void dungeon_generate_npcs(Dungeon *dungeon);
 
-void dungeon_print(Dungeon dungeon, int print_type, int print_color);
+void dungeon_print(Dungeon dungeon, int print_fill, int print_color, int print_weight);
+
+#endif /* DUNGEON_H */

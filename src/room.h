@@ -22,17 +22,15 @@ typedef struct {
 	
 	int connected;
 	
-	Cell *tl;
-	Cell *br;
-	Cell *center;
+	Coordinate tl;
+	Coordinate br;
+	Coordinate center;
 } Room;
-
-#endif /* ROOM_H */
 
 /****** function declarations *****/
 Room room_init(uint8_t index, uint8_t room_width, uint8_t room_height);
 
-void room_init_cells(Room *room, Cell *top_left, Cell *bottom_right, Cell *center);
+void room_init_cells(Room *room, Coordinate top_left, Coordinate bottom_right, Coordinate center);
 
 int rooms_intersect(int num_rooms, Room rooms[], Room *room, int space_between);
 
@@ -45,3 +43,5 @@ int room_is_same(Room beta, Room alpha);
 int rooms_smallest_distance_y(Room room1, Room room2);
 
 int rooms_smallest_distance_x(Room room1, Room room2);
+
+#endif /* ROOM_H */

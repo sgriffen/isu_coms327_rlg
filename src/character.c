@@ -7,14 +7,17 @@
 
 /*********** global vars **********/
 
-Character character_init(uint32_t id, Cell *loc, CharacterType type) {
+
+/****** function definitions ******/
+Character character_init(uint32_t id, Coordinate loc, CharacterType type) {
 	
-	Character character;
-	
-	character.id = id;
-	character.location = loc;
-	character.type = type;
-	character.meta_data = -1;
+	Character character = {
+		
+		.id 		= id,
+		.location 	= loc,
+		.type 		= type,
+		.meta_data 	= -1
+	};
 	
 	return character;
 }

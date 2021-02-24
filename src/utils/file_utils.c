@@ -1,6 +1,8 @@
 /******* include custom libs ******/
 #include "file_utils.h"
 
+
+/****** function definitions ******/
 FILE* utils_fopen(const char *f_name, char *mode) { return fopen(f_name, mode); }
 
 int utils_fclose(FILE *f) { return fclose(f); }

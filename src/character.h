@@ -19,7 +19,7 @@ typedef struct {
 	
 	uint32_t id;
 	
-	Cell *location;
+	Coordinate location;
 	
 	CharacterType type;
 	
@@ -27,7 +27,7 @@ typedef struct {
 } Character;
 
 /****** function declarations *****/
-Character character_init(uint32_t id, Cell *loc, CharacterType type);
+Character character_init(uint32_t id, Coordinate loc, CharacterType type);
 
 void character_print(Character character, int print_color);
 

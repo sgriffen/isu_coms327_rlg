@@ -3,10 +3,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <time.h>
 /******* include custom libs ******/
 #include "math_utils.h"
 
+
+/****** function definitions ******/
 int utils_rand_between(int lower_bound, int upper_bound, time_t *seed) {
 	
 	//srand(time(seed));

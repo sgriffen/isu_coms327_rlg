@@ -17,10 +17,10 @@ Things to note:
 
 To run the program, run the Makefile, and enter './rouge.o'. The valid command arguments are defined as follows:
 	It is assummed that an argument is precedded with a "--" and arguments have no such prefix. 
-	A '|' means that the arguments that are involved are never entered at the same time. Pick 1 argument to enter
+	A '|' means that the flags/arguments that are involved are never entered at the same time. Pick 1 flag/argument to enter
 	Ignore '<>' characters when entering arguments in the command window:
 	- Print dungeon mod:
-		- flag: print
+		- flag: print | p
 		- default behavior: Printing follows required specification
 		- arguments: <b | f>
 		- description: 
@@ -29,33 +29,23 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 		- notes: 
 		- example command: --border f
 	- Load dungeon from file:
-		- flag: load
+		- flag: load | l
 		- default behavior: No file is loaded, dungeon is generated from scratch
-		- arguments:
-		- description: Loads a dungeon from a bit-file with the full path of "~/.rlg327/dungeon"
+		- arguments: <filepath>
+		- description: 
+			- <filepath> is undefined - loads a dungeon from a bit-file with the full path of "~/.rlg327/dungeon"
+			- <filepath> is defined  - loads a dungeon from a bit-file at location <filepath>
 		- notes: Bit-file must be in the format given in the assignment 1.02 requirements
-		- example command: --load
-	- Load dungeon from specified file:
-		- flag: load-from
-		- default behavior: No file is loaded, dungeon is generated from scratch
-		- arguments: <filepath>
-		- description: Loads a dungeon from a bit-file at location <filepath>
-		- notes: Command overrides "--load" command if both are inputted on program startup. Bit-file must be in the format given in the assignment 1.02 requirements
-		- example command: --load tmp/bit-files/file.b
+		- example command: --l tmp/bit-files/file.b
 	- Save dungeon to file:
-		- flag: save
-		- default behavior: Dungeon is not saved to bit-file after generation
-		- arguments:
-		- description: Writes a generated dungeon to a bit-file
-		- notes: Bit-file adhears to the assignment 1.02 requirements
-		- example command: --save
-	- Save dungeon to specified file:
-		- flag: save-to
+		- flag: save | s
 		- default behavior: Dungeon is not saved to bit-file after generation
 		- arguments: <filepath>
-		- description: Writes a generated dungeon to a bit-file at location <filepath>
-		- notes: Command overrides "--save" command if both are inputted on program startup. Bit-file adhears to the assignment 1.02 requirements
-		- example command: --save-to "/var/www/html/example.com/file.b"
+		- description: 
+			- <filepath> is undefined - writes a generated dungeon to a bit-file
+			- <filepath> is defined - writes a generated dungeon to a bit-file at location <filepath>
+		- notes: Bit-file adhears to the assignment 1.02 requirements
+		- example command: --s "/var/www/html/example.com/file.b"
 	- Print color:
 		- flag: color
 		- default behavior: Nothing is printed with color
@@ -66,4 +56,4 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 	
 
 A command to run this application with all arguments defined may look as follows:
-	./rouge.o [--border <b | f>] [--load] [--load-from <filepath>] [--save] [--save-to <filepath>] [--color]
+	./rouge.o [<--print | --p> <b | f>] [<--load | --l> <filepath>] [<--save | --s> <filepath>] [--color]
