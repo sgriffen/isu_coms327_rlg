@@ -34,7 +34,7 @@ Cell cell_init(uint8_t y, uint8_t x, int hardness) {
 	return cell;
 }
 
-int coordinate_is_same(Coordinate beta, Coordinate alpha) { return (beta.y == alpha.y && beta.x == alpha.y); }
+int coordinate_is_same(Coordinate beta, Coordinate alpha) { return (beta.y == alpha.y && beta.x == alpha.x); }
 
 int coordinate_is_neighbor(Coordinate beta, Coordinate alpha) {
 	

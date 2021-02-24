@@ -27,6 +27,8 @@ void pathfinder_ntunneling(Dungeon *dungeon, Coordinate start) {
 				
 				if (coordinate_is_same(dungeon->cells[i][j].location, start)) 	{ queue_enqueue(&queue, queue_node_init(dungeon->cells[i][j].location, CELL_HARDNESS_MIN)); }
 				else 															{ queue_enqueue(&queue, queue_node_init(dungeon->cells[i][j].location, INT32_MAX)); }
+				
+//				printf("-- debug -- adding to queue y:[%d] x:[%d]\n", dungeon->cells[i][j].location.y, dungeon->cells[i][j].location.x);
 			}
 		}
 	}
@@ -35,16 +37,25 @@ void pathfinder_ntunneling(Dungeon *dungeon, Coordinate start) {
 //	queue_print(queue);
 //	printf("-- end debug --\n");
 	
+	printf("-- debug -- starting queue at y:[%d] x:[%d]\n", start.y, start.x);
+	
+	printf("-- debug -- queue size:[%d]\n", queue.size);
+	printf("-- debug -- queue index:[%d]\n", queue.index);
+	printf("-- debug -- first in queue at index:[%d] - priority:[%d] y:[%d] x:[%d]\n", queue.index-1, queue_peek(&queue)->priority, queue_peek(&queue)->cell_loc.y, queue_peek(&queue)->cell_loc.x);
+	
 	while (!queue_is_empty(queue)) {
 		
 		QueueNode node = queue_dequeue(&queue);
+		
+		printf("-- debug -- dequeuing index:[%d] y:[%d] x:[%d]\n", queue.index, node.cell_loc.y, node.cell_loc.x);
+		
 		dungeon->cells[node.cell_loc.y][node.cell_loc.x].weight_ntunneling = node.priority;
 		
 		pathfinder_mark_neighbors(&queue, node, CELL_TRAVERSAL_COST);
 		
 //		dungeon_print(*dungeon, 0, 0, 2);
 		
-//		if (queue.index % 100 == 0 || queue.index < 10) queue_print(queue);
+		if (queue.index > 200) { queue_print(queue); }
 	}
 	
 	return;
@@ -64,6 +75,8 @@ void pathfinder_tunneling(Dungeon *dungeon, Coordinate start) {
 				
 				if (coordinate_is_same(dungeon->cells[i][j].location, start)) 	{ queue_enqueue(&queue, queue_node_init(dungeon->cells[i][j].location, CELL_HARDNESS_MIN)); }
 				else 															{ queue_enqueue(&queue, queue_node_init(dungeon->cells[i][j].location, INT32_MAX)); }
+				
+//				printf("-- debug -- adding to queue y:[%d] x:[%d]\n", dungeon->cells[i][j].location.y, dungeon->cells[i][j].location.x);
 			}
 		}
 	}
@@ -85,18 +98,26 @@ void pathfinder_tunneling(Dungeon *dungeon, Coordinate start) {
 
 void pathfinder_mark_neighbors(Queue *queue, QueueNode from, uint32_t cost) {
 	
-	int visited = 0;
+	int i = 0;
+	int num_neighbors = 0;
+	uint16_t *neighbor_indexes = calloc(CELL_NUM_NEIGHBORS, sizeof(uint16_t));
 	
-	while (visited < CELL_NUM_NEIGHBORS) {
+	num_neighbors = queue_find_neighbors(queue, from, CELL_NUM_NEIGHBORS, neighbor_indexes);
+	
+	printf("-- debug -- found neighbors:[%d]\n", num_neighbors);
+	
+	for (i = 0; i < num_neighbors; i++) {
 		
-		QueueNode *neighbor = queue_find_neighbor(*queue, from);
+		printf("-- debug -- marking neighbor:[%d]\n", i);
 		
-		if (neighbor != NULL && neighbor->priority > (from.priority + cost)) {
+		if (queue->nodes[neighbor_indexes[i]].priority > (from.priority + cost)) {
 			
-			neighbor->priority = from.priority + cost;
+			queue->nodes[neighbor_indexes[i]].priority = from.priority + cost;
 			queue_sort(queue);
 		}
-		
-		visited++;
 	}
+	
+	free(neighbor_indexes);
+	
+	return;
 }

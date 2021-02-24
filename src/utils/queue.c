@@ -41,7 +41,7 @@ int queue_is_empty(Queue queue) { return !queue.index; }
 
 int queue_is_full(Queue queue) { return queue.index == queue.size; }
 
-QueueNode* queue_peek(Queue queue) { return &(queue.nodes[(queue.size)-1]); }
+QueueNode* queue_peek(Queue *queue) { return &(queue->nodes[(queue->index)-1]); }
 
 QueueNode* queue_enqueue(Queue *queue, QueueNode node) {
 	
@@ -67,20 +67,30 @@ QueueNode* queue_enqueue(Queue *queue, QueueNode node) {
 
 QueueNode queue_dequeue(Queue *queue) {
 	
-	(queue->index)--;
-	return queue->nodes[queue->index];
-}
-
-QueueNode* queue_find_neighbor(Queue queue, QueueNode node) {
-	
-	int i = 0;
-	
-	for (i = queue.index-1; i >= 0; i--) {
+	if (!queue_is_empty(*queue)) {
 		
-		if (coordinate_is_neighbor(queue.nodes[i].cell_loc, node.cell_loc)) { return &(queue.nodes[i]); }
+		(queue->index)--;
+		return queue->nodes[queue->index];
 	}
 	
-	return NULL;
+	return (QueueNode){0};
+}
+
+int queue_find_neighbors(Queue *queue, QueueNode from, int num_neighbors, uint16_t *neighbor_indexes) {
+	
+	int i = 0;
+	int visited = 0;
+	
+	for (i = queue->index-1; i >= 0 && visited < num_neighbors; i--) {
+		
+		if (coordinate_is_neighbor(queue->nodes[i].cell_loc, from.cell_loc)) {
+			
+			neighbor_indexes[visited] = i;
+			visited++;
+		}
+	}
+	
+	return visited;
 }
 
 void queue_sort(Queue *queue) {
@@ -90,25 +100,27 @@ void queue_sort(Queue *queue) {
 	for (i = queue->index-1; i > 0; i--) {
 		for (j = i-1; j >= 0; j--) {
 			
-			if (queue->nodes[j].priority < queue->nodes[i].priority) { //if nodes[j] has a higher priority (lower value) than nodes[i], swap
-				
-				QueueNode temp = queue->nodes[i];
-				queue->nodes[i] = queue->nodes[j];
-				queue->nodes[j] = temp;
-			}
+			if (queue->nodes[j].priority < queue->nodes[i].priority) { queue_node_swap(&(queue->nodes[j]), &(queue->nodes[i])); } //if nodes[j] has a higher priority (lower value) than nodes[i], swap
 		}
 	}
 	
 	return;
 }
 
+void queue_node_swap(QueueNode *beta, QueueNode *alpha) {
+	
+	QueueNode temp = *alpha;
+	*alpha = *beta;
+	*beta = temp;
+}
+
 void queue_print(Queue queue) {
 	
 	int i = 0;
 	
-	printf("queue -- size: [%d]\n", queue.index);
+	printf("queue -- index: [%d]\n", queue.index);
 	
-	for (i = queue.index-1; i >= 0; i--) { printf("queue -- position: [%d]   priority: [%d]\n", i, queue.nodes[i].priority); }
+	for (i = queue.index-1; i >= 0; i--) { printf("queue -- position: [%3d]   priority: [%d]\n", i, queue.nodes[i].priority); }
 	
 	return;
 }

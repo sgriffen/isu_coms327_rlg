@@ -18,6 +18,7 @@ typedef struct {
 	uint32_t priority;
 	
 	Coordinate cell_loc;
+	Coordinate from;
 } QueueNode;
 
 typedef struct {
@@ -37,15 +38,17 @@ int queue_is_empty(Queue queue);
 
 int queue_is_full(Queue queue);
 
-QueueNode* queue_peek(Queue queue);
+QueueNode* queue_peek(Queue *queue);
 
 QueueNode* queue_enqueue(Queue *queue, QueueNode node);
 
 QueueNode queue_dequeue(Queue *queue);
 
-QueueNode* queue_find_neighbor(Queue queue, QueueNode node);
+int queue_find_neighbors(Queue *queue, QueueNode from, int num_neighbors, uint16_t *neighbor_indexes);
 
 void queue_sort(Queue *queue);
+
+void queue_node_swap(QueueNode *beta, QueueNode *alpha);
 
 void queue_print(Queue queue);
 
