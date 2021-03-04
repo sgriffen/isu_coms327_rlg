@@ -132,14 +132,17 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 	- Number of monsters to generated
 		- flag: nummon | nm
 		- arguments: <uint>
-		- description: Generates <uint> number of npcs in the dungeon
+		- description: 
+			- Generates <uint> number of npcs in the dungeon
 		- notes: <uint> should be non-negative. If <uint> is more than the max amount of cells in the dungeon, <uint> is truncated to the max cells
 		- default behavior: A random number of npcs between <num_rooms> and <num_rooms * 2> are generated
 		- example command: --nm 20
 	- FPS to run the game at:
 		- flag: fps
 		- arguments <float>
-		- description: Runs the game at <float> frames-per-second
+		- description: 
+			- Runs the game at <float> frames-per-second
+			- If a negative fps is defined, game progresses by the user hitting "enter"
 		- notes: Depending on the number of npcs generated, turns can take longer than <float> to complete
 		- default behavior: Game runs at 1 fps
 		- example command: --fps 0.5
