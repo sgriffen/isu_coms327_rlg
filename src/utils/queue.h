@@ -1,25 +1,30 @@
+#include <stdint.h>
+
 #ifndef QUEUE_H
 #define QUEUE_H
 
-#include <stdint.h>
+#include "../coordinate.h"
 
-#include "../cell.h"
 
 /********** definitions **********/
+
+
+/************* macros *************/
 
 
 /******* enums declarations *******/
 
 
-
 /******* struct declarations ******/
-typedef struct {
+typedef struct QueueNode QueueNode;
+
+struct QueueNode {
 	
 	uint32_t priority;
 	
-	Coordinate cell_loc;
-	Coordinate from;
-} QueueNode;
+	void *element;
+	QueueNode *from;
+};
 
 typedef struct {
 	
@@ -32,7 +37,7 @@ typedef struct {
 /****** function declarations *****/
 Queue queue_init(uint16_t size);
 
-QueueNode queue_node_init(Coordinate loc, uint32_t priority);
+QueueNode queue_node_init(void *loc, uint32_t priority);
 
 int queue_is_empty(Queue queue);
 
@@ -44,7 +49,9 @@ QueueNode* queue_enqueue(Queue *queue, QueueNode node);
 
 QueueNode queue_dequeue(Queue *queue);
 
-int queue_find_neighbors(Queue *queue, QueueNode from, int num_neighbors, uint16_t *neighbor_indexes);
+int queue_find_neighbors_card(Queue *queue, QueueNode from, int num_neighbors, QueueNode **neighbors);
+
+int queue_find_neighbors_diag(Queue *queue, QueueNode from, int num_neighbors, QueueNode **neighbors);
 
 void queue_sort(Queue *queue);
 

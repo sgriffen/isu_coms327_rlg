@@ -1,4 +1,25 @@
+03/04/2021
+	- Turn in of final assignment 1.04 draft
+	- Finilizing npc movement edge-cases
+
+03/02/2021
+	- Adding movement for all npcs
+
+03/02/2021
+	- Initial movement templates for pc and npcs
+	- Modified current character.c and character.h files to adhear to new requirements
+
+02/26/2021
+	- Starting the process to use Dijkstra's Algorithm in cooridor generation, not using for now
+
+02/25/2021
+	- Turn in of final assignment 1.03 draft
+	- Updated README with new command arg options
+	- Adding 'binary_heap.c' and 'binary_heap.h' for possible new implementation of priority queue. They are unused for now, but may replace 'queue.c' and 'queue.h' in the future
+
 02/24/2021:
+	- Adding ability to define multiple print arguments on startup to print multiple versions of dungeons at once
+	- Finalizing shortest path algorithm (implementation found in 'pathfinder.c' and 'pathfinder.h'. Priority queue implementation found in 'queue.c' and 'queue.h')
 	- Replacing cell references in code (for rooms and PC for example) with a (y, x) coordinate reference
 	- Replacing most of the 'malloc' calls with 'calloc'
 

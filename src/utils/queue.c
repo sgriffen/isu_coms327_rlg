@@ -26,12 +26,13 @@ Queue queue_init(uint16_t length) {
 	return queue;
 }
 
-QueueNode queue_node_init(Coordinate loc, uint32_t priority) {
+QueueNode queue_node_init(void *element, uint32_t priority) {
 	
 	QueueNode node = {
 		
 		.priority = priority,
-		.cell_loc = loc
+		.element = element,
+		.from = NULL
 	};
 	
 	return node;
@@ -76,16 +77,37 @@ QueueNode queue_dequeue(Queue *queue) {
 	return (QueueNode){0};
 }
 
-int queue_find_neighbors(Queue *queue, QueueNode from, int num_neighbors, uint16_t *neighbor_indexes) {
+int queue_find_neighbors_card(Queue *queue, QueueNode from, int num_neighbors, QueueNode **neighbors) {
 	
 	int i = 0;
 	int visited = 0;
 	
 	for (i = queue->index-1; i >= 0 && visited < num_neighbors; i--) {
 		
-		if (coordinate_is_neighbor(queue->nodes[i].cell_loc, from.cell_loc)) {
+		Coordinate *loc = (Coordinate*)(queue->nodes[i].element);
+		Coordinate *loc_from = (Coordinate*)(from.element);
+		if (coordinate_is_neighbor_card(*loc, *loc_from)) {
 			
-			neighbor_indexes[visited] = i;
+			neighbors[visited] = &(queue->nodes[i]);
+			visited++;
+		}
+	}
+	
+	return visited;
+}
+
+int queue_find_neighbors_diag(Queue *queue, QueueNode from, int num_neighbors, QueueNode **neighbors) {
+	
+	int i = 0;
+	int visited = 0;
+	
+	for (i = queue->index-1; i >= 0 && visited < num_neighbors; i--) {
+		
+		Coordinate *loc = (Coordinate*)(queue->nodes[i].element);
+		Coordinate *loc_from = (Coordinate*)(from.element);
+		if (coordinate_is_neighbor_diag(*loc, *loc_from)) {
+			
+			neighbors[visited] = &(queue->nodes[i]);
 			visited++;
 		}
 	}

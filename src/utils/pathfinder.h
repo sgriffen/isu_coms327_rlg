@@ -1,25 +1,31 @@
+#include <stdint.h>
+
 #ifndef PATHFINDER_H
 #define PATHFINDER_H
 
-#include <stdint.h>
-
 #include "../dungeon.h"
-#include "queue.h"
+#include "./queue.h"
+
+/*********** definitions **********/
+
+
+/************* macros *************/
+
 
 /******* enums declarations *******/
-
 
 
 /******* struct declarations ******/
 
 
-
 /****** function declarations *****/
-void pathfinder_ntunneling(Dungeon *dungeon, Coordinate start);
+void pathfinder_rewind(Dungeon *dungeon, Coordinate *start, Coordinate *end, int (*rewind_to_start)(Dungeon*, QueueNode*, Coordinate *start));
 
-void pathfinder_tunneling(Dungeon *dungeon, Coordinate start);
+void pathfinder_ntunneling(Dungeon *dungeon, Coordinate *start);
 
-void pathfinder_mark_neighbors(Queue *queue, QueueNode from, uint32_t cost);
+void pathfinder_tunneling(Dungeon *dungeon, Coordinate *start);
+
+void pathfinder_mark_neighbors(Queue *queue, QueueNode from, int max_num_neighbors, uint32_t cost, int (*mark)(Queue*, QueueNode, int, QueueNode**));
 
 
-#endif /* QUEUE_H */
+#endif /* PATHFINDER_H */

@@ -1,18 +1,22 @@
 Sean Griffen (griffens)
 
 
-This is my solution to homework 1.02, Dungeon Generation.
+This is my solution to homework 1.03, Path Finding.
 It generates a "level" or "floor" that will eventually be one of many in a full Dungeon, complete with a random number of rooms with a random size (within the given constraints), cooridors connecting the rooms, and a small amount of up and down staircases.
+After "floor" generation it uses Dijkstra’s Algorithm to find the shortest path from the player to every cell in the dungeon. It does this for rooms/cooridors only for monsters that cannot tunnel through rock, and for every cell in the dungeon (except immutable rocks) for monsters that can tunnel
+The Priotiry Queue is implemted in src/utils/queue.c and Dijkstra’s Algorithm is implemented in src/utils/pathfinder.c
+These "shortest path" maps are displayed after the origionally generated dungeon. This is temporary for assignment 1.3
 Right now, the "randomness" of the level is seeded by time(), so the generated level is only going to be different every second.
 Cooridors are drawn by finding the first room not in the connected set of rooms, and finding the closest room to it not in said set of connected rooms. The cooridor is then drawn to connect the two rooms, following the most direct path. Repeat this until all rooms are connected
 
 Things to note:
-	- A cell denoted as a Rock is printed as ' ' with the color 'green'
-	- A cell denoted as a Room is printed as '.' with the color 'green'
-	- A cell denoted as a cooridor is printed as '#' with the color 'green'
-	- A cell denoted as a up staircase is printed as '<' with the color 'cyan'
-	- A cell denoted as a down staircase is printed as '>' with the color 'cyan'
+	- A cell denoted as a Rock is printed as ' '
+	- A cell denoted as a Room is printed as '.'
+	- A cell denoted as a cooridor is printed as '#'
+	- A cell denoted as a up staircase is printed as '<'
+	- A cell denoted as a down staircase is printed as '>'
 	- A cell containing a player is printed as '@' with the color 'green' if the color option is selected
+	- A cell whose distance from the player is considered infinity is printed as 'X' when displaying a path map
 
 
 To run the program, run the Makefile, and enter './rouge.o'. The valid command arguments are defined as follows:
@@ -21,39 +25,50 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 	Ignore '<>' characters when entering arguments in the command window:
 	- Print dungeon mod:
 		- flag: print | p
-		- default behavior: Printing follows required specification
 		- arguments: <b | f>
 		- description: 
 			- arg = <b>: Prints a dungeon border
 			- arg = <f>: Rocks are printed as unicode blocks, increasing shade of block as hardness increases. Rooms and cooridors are printed as empty spaces to contrast filled in rocks
 		- notes: 
+		- default behavior: Printing follows required specification
 		- example command: --border f
 	- Load dungeon from file:
 		- flag: load | l
-		- default behavior: No file is loaded, dungeon is generated from scratch
 		- arguments: <filepath>
 		- description: 
 			- <filepath> is undefined - loads a dungeon from a bit-file with the full path of "~/.rlg327/dungeon"
 			- <filepath> is defined  - loads a dungeon from a bit-file at location <filepath>
 		- notes: Bit-file must be in the format given in the assignment 1.02 requirements
+		- default behavior: No file is loaded, dungeon is generated from scratch
 		- example command: --l tmp/bit-files/file.b
 	- Save dungeon to file:
 		- flag: save | s
-		- default behavior: Dungeon is not saved to bit-file after generation
 		- arguments: <filepath>
 		- description: 
 			- <filepath> is undefined - writes a generated dungeon to a bit-file
 			- <filepath> is defined - writes a generated dungeon to a bit-file at location <filepath>
 		- notes: Bit-file adhears to the assignment 1.02 requirements
+		- default behavior: Dungeon is not saved to bit-file after generation
 		- example command: --s "/var/www/html/example.com/file.b"
 	- Print color:
 		- flag: color
-		- default behavior: Nothing is printed with color
 		- arguments:
 		- description: Prints the PC in green and NPCs in various colors based on type
 		- notes: Only PC and NPCs are printed in color
+		- default behavior: Nothing is printed with color
 		- example command: --color
+	- Print cell attributes:
+		- flag: print-cell | p-c
+		- arguments: <h nt t c>
+		- description:
+			- <h>  is entered - A hardness map is printed after the base dungeon is printed. This will show all the hardness values of all the cells as a two-digit hex number. A row and column key is also displayed
+			- <nt> is entered - A non-tunneling path map is printed after the base dungeon is printed. This shows the shortest path generated to the player from any connected cells in the dungeon for non-tunneling monsters
+			- <t>  is entered - A tunneling path map is printed after the base dungeon is printed. This shows the shortest path generated to the player from any connected cells in the dungeon for tunneling monsters
+			- <c>  is entered - A cost map is printed after the base dungeon is printed. This will show the cost to move from a given cell to any cell around it
+		- notes: Arguments <nt> and <t> are automatically printed for assignment 1.03, maps are printed in the order <base> <nt> <t> <h> <c>
+		- default behavior: No additional cell information is printed after dungeon generation. Only the base dungeon is printed
+		- example command: --p-c h nt c
 	
 
 A command to run this application with all arguments defined may look as follows:
-	./rouge.o [<--print | --p> <b | f>] [<--load | --l> <filepath>] [<--save | --s> <filepath>] [--color]
+	./rouge.o [<--print | --p> <b | f>] [<--load | --l> <filepath>] [<--save | --s> <filepath>] [--color] [<--print-cell | --p-c> <h nt t c>]

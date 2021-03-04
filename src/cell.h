@@ -1,16 +1,17 @@
+#include <stdint.h>
+
 #ifndef CELL_H
 #define CELL_H
 
-#include <stdint.h>
+#include "./coordinate.h"
 
-/********** definitions **********/
+/********** definitions ***********/
 #define CELL_HARDNESS_MIN 0
 #define CELL_HARDNESS_MAX 255
 #define CELL_NUM_NEIGHBORS 8
-#define CELL_TRAVERSAL_COST 1
 
-/************* macros ************/
-#define CELL_HARDNESS_TRAVERSAL(hardness) ((hardness / 85) + CELL_TRAVERSAL_COST)
+/************* macros *************/
+#define CELL_TRAVERSAL_COST(hardness) ((hardness / 85) + 1)
 
 
 /******* enums declarations *******/
@@ -25,33 +26,24 @@ typedef enum {
 } CellType;
 
 /******* struct declarations ******/
-typedef struct {
-	
-	uint8_t y;
-	uint8_t x;
-} Coordinate;
-
-typedef struct {
+typedef struct Cell {
 	
 	Coordinate location;
 	uint8_t hardness;
+	CellType type;
 	
 	uint8_t visited;
 	int meta_data;
-	uint8_t weight_ntunneling;
-	uint8_t weight_tunneling;
-	
-	CellType type;
+	uint32_t weight_ntunneling;
+	uint32_t weight_tunneling;
 } Cell;
 
 /****** function declarations *****/
 Cell cell_init(uint8_t y, uint8_t x, int hardness);
 
-int coordinate_is_same(Coordinate beta, Coordinate alpha);
+int cell_immutable_ntunneling(Cell cell);
 
-int coordinate_is_neighbor(Coordinate beta, Coordinate alpha);
-
-int cell_immutable(Cell cell);
+int cell_immutable_tunneling(Cell cell);
 
 void cell_print(Cell cell, int print_fill, int print_weight);
 

@@ -3,19 +3,31 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-
+#include <unistd.h>
 #include <sys/stat.h>
+#include <time.h>
 /******* include custom libs ******/
 #include "rouge.h"
 
 /****** function definitions ******/
 int main(int argc, char *argv[]) {
 	
-	int run_args[ARGS_LENGTH][ARGS_DEPTH] = {
-		{ 0, 0 }, 	//print types: [0, *] = dungeon, no border; [1, *] = dungeon, with border; [2, *] = dungeon, filled walls; [*, 0] = print cell type; [*, 1] = print cell hardness
-		{ 0, 0 },	//load dungeon in from file before running game
-		{ 0, 0 }, 	//save current dungeon to file after dungeon is created
-		{ 0, 0 },	//print color
+	RunArgs run_args = {
+		
+		.fps = 1.0,
+		
+		.print_type = 0,
+		.print_color = 0,
+		.print_hardness = 0,
+		.print_weight_ntunneling = 0,
+		.print_weight_tunneling = 0,
+		.print_traversal_cost = 0,
+		
+		.file_load = 0,
+		.load_dir = NULL,
+		.file_save = 0,
+		.save_dir = NULL,
+		.num_npcs = 0
 	};
 	Dungeon dungeon;
 	
@@ -34,106 +46,299 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 
-void args_parse(int argc, char *argv[], int (*run_args)[ARGS_LENGTH][ARGS_DEPTH]) {
+void args_parse(int argc, char *argv[], RunArgs *run_args) {
 	
 	int i = 0;
 	
 	for (i = 1; i < argc; i++) {
 		
-		if (!strcmp(argv[i], "--print") || !strcmp(argv[i], "--p")) { //print a (dungeon border) or (filled-in walls and empty rooms)
+		if (i+1 < argc && (!strcmp(argv[i], "--print") || !strcmp(argv[i], "--p"))) { //print a (dungeon border) or (filled-in walls and empty rooms)
 			
-			if (i+1 < argc && !strcmp(argv[i+1], "b")) { (*run_args)[0][0] = 1;  } //print (dungeon border)
-			else if (i+1 < argc && !strcmp(argv[i+1], "f")) { (*run_args)[0][0] = 2; } //print (filled-in walls and empty rooms)
+			if (!strcmp(argv[i+1], "b")) 		{ run_args->print_type = 1; } //print (dungeon border)
+			else if (!strcmp(argv[i+1], "f")) 	{ run_args->print_type = 2; } //print (filled-in walls and empty rooms)
 		}
-		if (!strcmp(argv[i], "--print-cell") || !strcmp(argv[i], "--pc")) { //print the (cell type) or (cell hardness)
+		if (i+1 < argc && (!strcmp(argv[i], "--print-cell") || !strcmp(argv[i], "--p-c"))) { //print the (cell type) or (cell hardness)
 			
-			if (i+1 < argc && !strcmp(argv[i+1], "h")) { (*run_args)[0][1] = 1; } //print cell hardness
-			else if (i+1 < argc && !strcmp(argv[i+1], "nt")) { (*run_args)[0][1] = 2;  } //print cell weight (tunneling)
-			else if (i+1 < argc && !strcmp(argv[i+1], "t")) { (*run_args)[0][1] = 3; } //print cell weight (non-tunneling)
+			while (i+1 < argc && argv[i+1][0] != '-') {
+				
+				if (!strcmp(argv[i+1], "h")) 		{ run_args->print_hardness = 1; } 			//print cell hardness
+				else if (!strcmp(argv[i+1], "nt")) 	{ run_args->print_weight_ntunneling = 1; } 	//print cell weight (non-tunneling)
+				else if (!strcmp(argv[i+1], "t")) 	{ run_args->print_weight_tunneling = 1; } 	//print cell weight (tunneling)
+				else if (!strcmp(argv[i+1], "c"))	{ run_args->print_traversal_cost = 1; } 	//print cell traversal cost
+			
+				i++;
+			}
 		}
 		
 		if (!strcmp(argv[i], "--load") || !strcmp(argv[i], "--l")) { //load dungeon from bit-file
 			
-			(*run_args)[1][0] = 1;
-			if (i+1 < argc && argv[i+1][0] != '-') { (*run_args)[1][1] = i+1; }
-		} 
+			run_args->file_load = 1;
+			if (i+1 < argc && argv[i+1][0] != '-') {
+				
+				run_args->load_dir = (char*)calloc(strlen(argv[i+1]), sizeof(char));
+				strcpy(run_args->load_dir, argv[i+1]);
+			}
+		}
 		
 		if (!strcmp(argv[i], "--save") || !strcmp(argv[i], "--s")) { //save generated dungeon to bit-file
 			
-			(*run_args)[2][0] = 1;
-			if (i+1 < argc && argv[i+1][0] != '-') { (*run_args)[2][1] = i+1; }
+			run_args->file_save = 1;
+			if (i+1 < argc && argv[i+1][0] != '-') {
+				
+				run_args->save_dir = (char*)calloc(strlen(argv[i+1]), sizeof(char));
+				strcpy(run_args->save_dir, argv[i+1]);
+			}
 		}
 		
-		if (!strcmp(argv[i], "--color")) { (*run_args)[3][0] = 1; } //print PC and NPCs in color
+		if (!strcmp(argv[i], "--color")) { run_args->print_color = 1; } //print PC and NPCs in color
+		
+		if (!strcmp(argv[i], "--nummon")) { run_args->num_npcs = atoi(argv[i+1]); } //define number of npcs
+		
+		if (!strcmp(argv[i], "--fps")) { run_args->fps = (float)atof(argv[i+1]); } //define fps
 	}
 	
 	return;
 }
 
-void rouge_init(Dungeon *dungeon, char *argv[], int run_args[ARGS_LENGTH][ARGS_DEPTH]) {
+void rouge_init(Dungeon *dungeon, char *argv[], RunArgs run_args) {
 	
-	if (run_args[1][0]) {
+	if (run_args.file_load) {
 		
-//		printf("debug -- loading dungeon from bit-file\n");
+//		printf("-- debug -- loading dungeon from bit-file\n");
 		
+		/* initialize dungeon memory */
 		dungeon_mem_init(dungeon, (uint8_t)DUNGEON_HEIGHT, (uint8_t)DUNGEON_WIDTH);
 		
-		char *f_name = "";
-		if (run_args[1][1]) {
-			
-			f_name = (char*)malloc(sizeof(char) * strlen(argv[run_args[1][1]]) + 1);
-			f_name[sizeof(f_name)-1] = '\0';
-			strcpy(f_name, argv[run_args[1][1]]); 
-		}
-		
-		printf("%s\n", f_name);
-		int read_invalid = fread_dungeon(dungeon, f_name);
+		int read_invalid = fread_dungeon(dungeon, run_args.load_dir);
 		if (read_invalid) { 
 		
-//			printf("Dungeon read failed. Code [%d]\n", read_invalid);
+			printf("Dungeon read failed. Code [%d]\n", read_invalid);
 			
-			dungeon_init(dungeon, (uint8_t)DUNGEON_HEIGHT, (uint8_t)DUNGEON_WIDTH);
+			dungeon_init(dungeon, (uint8_t)DUNGEON_HEIGHT, (uint8_t)DUNGEON_WIDTH, run_args.num_npcs);
 		}
 	}
-	else { dungeon_init(dungeon, (uint8_t)DUNGEON_HEIGHT, (uint8_t)DUNGEON_WIDTH); }
+	else { dungeon_init(dungeon, (uint8_t)DUNGEON_HEIGHT, (uint8_t)DUNGEON_WIDTH, run_args.num_npcs); }
 	
 	return;
 }
 
-void rouge_run(Dungeon *dungeon, int run_args[ARGS_LENGTH][ARGS_DEPTH]) {
+void rouge_run(Dungeon *dungeon, RunArgs run_args) {
 	
-	/* print created/loaded dungeon with desired print flags */
-	dungeon_print(*dungeon, run_args[0][0], run_args[3][0], 0); //replace last argument with run_args[0][1] after assignment 1.03
+	uint64_t turn = 0;
+	uint8_t pc_moved = 0;
 	
-	/* generate paths to player */
-	pathfinder_ntunneling(dungeon, dungeon->pc.location); //generate non-tunneling paths to player
-//	pathfinder_tunneling(dungeon, dungeon->pc.location); //generate tunneling paths to player
+	while (dungeon->pc.hp > 0 && dungeon->num_npcs > 0) {
 	
-	/* print generated path for non-tunneling entities */
-	dungeon_print(*dungeon, run_args[0][0], run_args[3][0], 2); //temporary for assignment 1.03
-	/* print generated path for tunneling entities */
-//	dungeon_print(*dungeon, run_args[0][0], run_args[3][0], 3); //temporary for assignment 1.03
-	/* print cell hardness values */
-//	dungeon_print(*dungeon, run_args[0][0], run_args[3][0], 1); //temporary for assignment 1.03
+		/* generate paths to player */
+		pathfinder_ntunneling(dungeon, &(dungeon->pc.location)); //generate non-tunneling paths to player
+		pathfinder_tunneling(dungeon, &(dungeon->pc.location)); //generate tunneling paths to player
+		
+		/* move npc and npc */
+		rouge_turn(dungeon, run_args, &turn, &pc_moved);
+		
+		/* print created/loaded dungeon with desired print flags */
+		if (run_args.print_weight_ntunneling) 	{ dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 2); }	//print non-tunneling weights
+		if (run_args.print_weight_tunneling) 	{ dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 3); }	//print tunneling weights
+		if (run_args.print_hardness) 			{ dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 1); }	//print cell hardness
+		if (run_args.print_traversal_cost) 		{ dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 4); }	//print traversal cost
+	}
 	
+	rouge_gameover(dungeon, run_args, turn, pc_moved);
 	return;
 }
 
-void rouge_clean(Dungeon *dungeon, char *argv[], int run_args[ARGS_LENGTH][ARGS_DEPTH]) {
+void rouge_turn(Dungeon *dungeon, RunArgs run_args, uint64_t *turn, uint8_t *pc_moved) {
 	
-	if (run_args[2][0]) {
+	int i = 0;
+	*pc_moved = 0;
+	
+	/* wrap pc and npc inside Character wrappers for queue */
+	Character_Wrapper wrapper_pc = {
 		
-//		printf("debug -- writing dungeon to bit-file\n");
+		.pc = &(dungeon->pc),
+		.npc = NULL
+	};
+	Character_Wrapper *wrapper_npcs = (Character_Wrapper*)calloc(dungeon->num_npcs, sizeof(Character_Wrapper));
+	for (i = 0; i < dungeon->num_npcs; i++) {
 		
-		char *f_name = "";
-		if (run_args[2][1]) {
+		Character_Wrapper wrapper = {
 			
-			f_name = (char*)malloc(sizeof(char) * strlen(argv[run_args[2][1]]));
-			f_name[sizeof(f_name)-1] = '\0';
-			strcpy(f_name, argv[run_args[2][1]]); 
-		}
+			.pc = NULL,
+			.npc = &(dungeon->npcs[i])
+		};
+		wrapper_npcs[i] = wrapper;
+	}
+	
+	/* organize pc and npcs into priority queue based on movement speed */
+	Queue queue = queue_init((dungeon->num_npcs)+1);
+	queue_enqueue(&queue, queue_node_init(&(wrapper_pc), CHARACTER_TURN(wrapper_pc.pc->speed)));
+	for (i = 0; i < (dungeon->num_npcs); i++) { queue_enqueue(&queue, queue_node_init(&(wrapper_npcs[i]), CHARACTER_TURN(wrapper_npcs[i].npc->speed))); }
+	
+	if (!(*turn)) { dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 0); }
+	
+	/* dequeue nodes, stopping at pc node */
+	while (!queue_is_empty(queue)) {
 		
-		int write_invalid = fwrite_dungeon(*dungeon, f_name);
+		QueueNode node = queue_dequeue(&queue);
+		Character_Wrapper *wrapper = (Character_Wrapper*)(node.element);
+		
+		if (wrapper->pc) { break; }
+		
+		rouge_move_npc(dungeon, *wrapper);
+		
+		(*turn)++;
+	}
+	
+	/* move pc */
+	rouge_move_pc(dungeon, wrapper_pc, run_args.fps);
+	(*turn)++;
+	*pc_moved = 1;
+	
+	/* print dungeon with updated npc positions */
+	dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 0);
+	
+	/* dequeue rest of nodes, if applicable */
+	while (!queue_is_empty(queue)) {
+		
+		QueueNode node = queue_dequeue(&queue);
+		Character_Wrapper *wrapper = (Character_Wrapper*)(node.element);
+		
+		rouge_move_npc(dungeon, *wrapper);
+		
+		(*turn)++;
+	}
+	
+	/* cleanup memory */
+	free(wrapper_npcs);
+}
+
+void rouge_move_pc(Dungeon *dungeon, Character_Wrapper wrapper, float fps) {
+	
+	Character_PC *pc = wrapper.pc;
+	Coordinate next;
+	
+	next = dungeon_move_pc(dungeon, pc);
+	
+	dungeon_resolve_collision(dungeon, wrapper, next);
+	if (cell_immutable_ntunneling(dungeon->cells[next.y][next.x]) > 0) {
+		
+		dungeon->cells[next.y][next.x].hardness = 0;
+		dungeon->cells[next.y][next.x].type = CellType_Cooridor;
+	}
+	
+	if (fps > 0) { usleep((int)(1000000 / fps)); }
+	else {
+	
+		char temp;
+		scanf("%c", &temp); 
+	}
+}
+
+void rouge_move_npc(Dungeon *dungeon, Character_Wrapper wrapper) {
+	
+	Character_NPC *npc = wrapper.npc;
+	Coordinate next = {
+		
+		.x = 0,
+		.y = 0
+	};
+	
+	switch(npc->type) {
+	
+	case 1:
+	
+		next = dungeon_move_npc1(dungeon, npc);
+		break;
+	case 2:
+		
+		next = dungeon_move_npc2(dungeon, npc);
+		break;
+	case 3:
+		
+		next = dungeon_move_npc3(dungeon, npc);
+		break;
+	case 4:
+		
+		next = dungeon_move_npc4(dungeon, npc);
+		break;
+	case 5:
+		
+		next = dungeon_move_npc5(dungeon, npc);
+		break;
+	case 6:
+		
+		next = dungeon_move_npc6(dungeon, npc);
+		break;
+	case 7:
+		
+		next = dungeon_move_npc7(dungeon, npc);
+		break;
+	case 8:
+		
+		next = dungeon_move_npc8(dungeon, npc);
+		break;
+	case 9:
+		
+		next = dungeon_move_npc9(dungeon, npc);
+		break;
+	case 10:
+		
+		next = dungeon_move_npcA(dungeon, npc);
+		break;
+	case 11:
+		
+		next = dungeon_move_npcB(dungeon, npc);
+		break;
+	case 12:
+		
+		next = dungeon_move_npcC(dungeon, npc);
+		break;
+	case 13:
+		
+		next = dungeon_move_npcD(dungeon, npc);
+		break;
+	case 14:
+		
+		next = dungeon_move_npcE(dungeon, npc);
+		break;
+	case 15:
+		
+		next = dungeon_move_npcF(dungeon, npc);
+		break;
+	default:
+		
+		next = dungeon_move_npc0(dungeon, npc);
+		break;
+	}
+	
+	dungeon_resolve_collision(dungeon, wrapper, next);
+	
+	if ((npc->type & NPC_TYPE_TUNNELING) && cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) {
+		
+		dungeon->cells[next.y][next.x].hardness = 0;
+		dungeon->cells[next.y][next.x].type = CellType_Cooridor;
+	}
+}
+
+void rouge_gameover(Dungeon *dungeon, RunArgs run_args, uint64_t turn, uint8_t pc_moved) {
+	
+	if (!pc_moved) { dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 0); }
+	
+	if (dungeon->pc.hp < 1) { printf("Game Over on turn [%ld] - PC died!\n", turn); }
+	else if (dungeon->num_npcs < 1) { printf("Game Over on turn [%ld] - PC defeated all monsters!\n", turn); }
+	else { printf("Game Over on turn [%ld] - not sure why tho...\n", turn); }
+	
+	return;
+}
+
+void rouge_clean(Dungeon *dungeon, char *argv[], RunArgs run_args) {
+	
+	if (run_args.file_save) {
+		
+//		printf("-- debug -- writing dungeon to bit-file\n");
+		
+//		fwrite_dungeon(*dungeon, run_args.save_dir);
+		int write_invalid = fwrite_dungeon(*dungeon, run_args.save_dir);
 		if (write_invalid) { printf("Dungeon write failed. Code [%d]\n", write_invalid); }
 	}
 	
@@ -142,11 +347,10 @@ void rouge_clean(Dungeon *dungeon, char *argv[], int run_args[ARGS_LENGTH][ARGS_
 
 int fread_dungeon(Dungeon *dungeon, char *f_name) {
 	
-	int i = 0, j = 0, k = 0;
 	struct stat st = {0};
 	size_t f_read_offset = 0;
 	
-	if (strlen(f_name) < 1) {
+	if (f_name == NULL) {
 	
 		f_name = (char*)malloc(sizeof(char) * (strlen(getenv("HOME")) + 17));
 		f_name[sizeof(f_name)-1] = '\0';
@@ -157,8 +361,8 @@ int fread_dungeon(Dungeon *dungeon, char *f_name) {
 		strcat(f_name, "dungeon");
 	}
 	
-//	printf("debug -- file name: [%s]\n", f_name);
-//	printf("debug -- reading [%ld] bytes\n", utils_fsize(f_name, 1)); 
+//	printf("-- debug -- file name: [%s]\n", f_name);
+//	printf("-- debug -- reading [%ld] bytes\n", utils_fsize(f_name, 1)); 
 	
 	/* allocate initial memory to read to and create FileReadBuffers */
 	char* f_type = (char*)calloc(strlen("RLG327-S2021"), sizeof(char));
@@ -253,90 +457,9 @@ int fread_dungeon(Dungeon *dungeon, char *f_name) {
 	f_buffer[11].nmemb = f_num_stairs_up * 2;
 	f_read_offset += utils_fread(f_name, f_buffer[11], f_read_offset, 1);
 	
-//	printf("debug -- file read complete\n");
+//	printf("-- debug -- file read complete\n");
 	
-	/* set dungeon cell hardness */
-	dungeon_generate_cells(dungeon);
-	for (i = 0; i < dungeon->height; i++) {
-		for (j = 0; j < dungeon->width; j++) {
-			
-			dungeon->cells[i][j].hardness = f_cells[k];
-			k++;
-		}
-	}
-//	printf("debug -- set cell hardness\n");
-	/* mark and place dungeon rooms */
-	dungeon->num_rooms = f_num_rooms;
-	dungeon->rooms = (Room*)calloc(f_num_rooms, sizeof(Room));
-	for (i = 0; i < (f_num_rooms*4); i+=4) {
-		
-		Room room = room_init((i/4), f_rooms[i+3], f_rooms[i+2]);
-		
-		room.tl = dungeon->cells[f_rooms[i+1]][f_rooms[i]].location;
-		room.br = dungeon->cells[(room.tl.y)+room.height][(room.tl.x)+room.width].location;
-		room.center = dungeon->cells[(room.tl.y)+(room.height/2)][(room.tl.x)+(room.width/2)].location;
-		
-		room.connected = 1;
-		
-		dungeon->rooms[i/4] = room;
-		
-		/* mark cells in dungeon as CellType Room  */
-		for (j = room.tl.y; j < room.br.y; j++) {
-			for (k = room.tl.x; k < room.br.x; k++) {
-				
-				dungeon->cells[j][k].type = CellType_Room;
-				dungeon->cells[j][k].hardness = 0;
-			}
-		}
-	}
-//	printf("debug -- marked rooms\n");
-	/* mark dungeon cooridors */
-	for (i = 0; i < dungeon->height; i++) {
-		for (j = 0; j < dungeon->width; j++) {
-			
-			if (dungeon->cells[i][j].hardness == 0 && dungeon->cells[i][j].type != CellType_Room) { dungeon->cells[i][j].type = CellType_Cooridor; }
-		}
-	}
-//	printf("debug -- marked cooridors\n");
-	/* place up staircases in dungeon */
-	dungeon->num_staircases_up = f_num_stairs_up;
-	dungeon->staircases_up = (Cell**)calloc(f_num_stairs_up, sizeof(Cell*));
-	for (i = 0; i < (f_num_stairs_up*2); i+=2) {
-		
-		dungeon->cells[f_stairs_up[i+1]][f_stairs_up[i]].type = CellType_Stair_up;
-		dungeon->cells[f_stairs_up[i+1]][f_stairs_up[i]].hardness = 0;
-		dungeon->staircases_up[i/2] = &(dungeon->cells[f_stairs_up[i+1]][f_stairs_up[i]]);
-	}
-//	printf("debug -- marked up staircases\n");
-	/* place down staircases in dungeon */
-	dungeon->num_staircases_down = f_num_stairs_down;
-	dungeon->staircases_down = (Cell**)calloc(f_num_stairs_down, sizeof(Cell*));
-	for (i = 0; i < (f_num_stairs_down*2); i+=2) {
-		
-		dungeon->cells[f_stairs_down[i+1]][f_stairs_down[i]].type = CellType_Stair_down;
-		dungeon->cells[f_stairs_down[i+1]][f_stairs_down[i]].hardness = 0;
-		dungeon->staircases_down[i/2] = &(dungeon->cells[f_stairs_down[i+1]][f_stairs_down[i]]);
-	}
-//	printf("debug -- marked down staircases\n");
-	/* place pc in dungeon */
-	Coordinate pc_loc = {
-		
-		.y = f_pc_y,
-		.x = f_pc_x
-	};
-	Character pc = character_init(0, pc_loc, CharacterType_PC);
-	dungeon->pc = pc;	
-//	printf("debug -- placed PC\n");
-	
-//	printf("debug -- file read offset: [%ld]\n", f_read_offset);
-//	printf("debug -- f type: [%s]\n", f_type);
-//	printf("debug -- f marker: [%d]\n", f_marker);
-//	printf("debug -- f size: [%d]\n", f_size);
-//	printf("debug -- pc x: [%d]\n", f_pc_x);
-//	printf("debug -- pc y: [%d]\n", f_pc_y);
-//	printf("debug -- num rooms: [%d]\n", f_num_rooms);
-//	printf("debug -- num stairs up: [%d]\n", f_num_stairs_up);
-//	printf("debug -- num stairs down: [%d]\n", f_num_stairs_down);
+	dungeon_finit(dungeon, f_pc_y, f_pc_x, f_cells, f_num_rooms, f_rooms, f_num_stairs_up, f_stairs_up, f_num_stairs_down, f_stairs_down);
 	
 	return 0;
 }
@@ -347,7 +470,7 @@ int fwrite_dungeon(Dungeon dungeon, char *f_name) {
 //	size_t f_write_len = 0;
 	struct stat st = {0};
 	
-	if (strlen(f_name) < 1) {
+	if (f_name == NULL) {
 		
 		f_name = (char*)calloc((strlen(getenv("HOME")) + 17), sizeof(char));
 		f_name[sizeof(f_name)-1] = '\0';
@@ -358,7 +481,7 @@ int fwrite_dungeon(Dungeon dungeon, char *f_name) {
 		strcat(f_name, "dungeon");
 	}
 	
-//	printf("debug -- file name: [%s]\n", f_name);
+//	printf("-- debug -- file name: [%s]\n", f_name);
 	
 	/* prepare dungeon information for writing */
 	char *f_type = "RLG327-S2021";
@@ -398,6 +521,7 @@ int fwrite_dungeon(Dungeon dungeon, char *f_name) {
 		f_stair_down[i] = dungeon.staircases_down[i/2]->location.x;
 		f_stair_down[i+1] = dungeon.staircases_down[i/2]->location.y;
 	}
+	
 	FileWriteBuffer f_buffer[] = {
 		
 		{
@@ -487,7 +611,7 @@ int fwrite_dungeon(Dungeon dungeon, char *f_name) {
 	utils_fwrite(f_name, f_size_buffer, (sizeof(char) * strlen(f_type))+(sizeof(uint32_t)), 0, 1);
 	
 	/* write dungeon to file, keeping track of the size of the file as it increases */
-//	printf("debug -- file write [%ld] bytes\n", f_write_len);
+//	printf("-- debug -- file write [%ld] bytes\n", f_write_len);
 	
 	return 0;
 }

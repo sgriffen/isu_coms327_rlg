@@ -51,16 +51,16 @@ int h_rooms_intersect(Room room1, Room room2, int space_between) {
 	return 1;
 }
 
-Room room_contains_point(int num_rooms, Room rooms[], Coordinate coord) {
+Room* room_contains_point(int num_rooms, Room *(rooms[]), Coordinate coord) {
 	
 	int i = 0;
 	
 	for (i = 0; i < num_rooms; i++) {
 	
-		if (coord.y >= rooms[i].tl.y && coord.y <= rooms[i].br.y && coord.x >= rooms[i].tl.x && coord.x <= rooms[i].br.x) { return rooms[i]; }
+		if (coord.y >= rooms[i]->tl.y && coord.y <= rooms[i]->br.y && coord.x >= rooms[i]->tl.x && coord.x <= rooms[i]->br.x) { return rooms[i]; }
 	}
 	
-	return room_init(-1, 0, 0);
+	return NULL;
 }
 
 Room* room_find_closest(int num_rooms, Room rooms[], int num_exclude, Room exclude_rooms[], Room *alpha) {
