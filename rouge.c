@@ -57,7 +57,7 @@ void args_parse(int argc, char *argv[], RunArgs *run_args) {
 			if (!strcmp(argv[i+1], "b")) 		{ run_args->print_type = 1; } //print (dungeon border)
 			else if (!strcmp(argv[i+1], "f")) 	{ run_args->print_type = 2; } //print (filled-in walls and empty rooms)
 		}
-		if (i+1 < argc && (!strcmp(argv[i], "--print-cell") || !strcmp(argv[i], "--p-c"))) { //print the (cell type) or (cell hardness)
+		if (i+1 < argc && (!strcmp(argv[i], "--print-cell") || !strcmp(argv[i], "--pc"))) { //print the (cell type) or (cell hardness)
 			
 			while (i+1 < argc && argv[i+1][0] != '-') {
 				
@@ -92,7 +92,7 @@ void args_parse(int argc, char *argv[], RunArgs *run_args) {
 		
 		if (!strcmp(argv[i], "--color")) { run_args->print_color = 1; } //print PC and NPCs in color
 		
-		if (!strcmp(argv[i], "--nummon")) { run_args->num_npcs = atoi(argv[i+1]); } //define number of npcs
+		if (!strcmp(argv[i], "--nummon") || !strcmp(argv[i], "--nm")) { run_args->num_npcs = atoi(argv[i+1]); } //define number of npcs
 		
 		if (!strcmp(argv[i], "--fps")) { run_args->fps = (float)atof(argv[i+1]); } //define fps
 	}

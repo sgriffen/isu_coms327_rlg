@@ -1,13 +1,11 @@
 Sean Griffen (griffens)
 
 
-This is my solution to homework 1.03, Path Finding.
-It generates a "level" or "floor" that will eventually be one of many in a full Dungeon, complete with a random number of rooms with a random size (within the given constraints), cooridors connecting the rooms, and a small amount of up and down staircases.
-After "floor" generation it uses Dijkstra’s Algorithm to find the shortest path from the player to every cell in the dungeon. It does this for rooms/cooridors only for monsters that cannot tunnel through rock, and for every cell in the dungeon (except immutable rocks) for monsters that can tunnel
-The Priotiry Queue is implemted in src/utils/queue.c and Dijkstra’s Algorithm is implemented in src/utils/pathfinder.c
-These "shortest path" maps are displayed after the origionally generated dungeon. This is temporary for assignment 1.3
+This is my solution to homework 1.04, Player Character and Monsters.
+It generates a "level" or "floor" that will eventually be one of many in a full Dungeon, complete with a random number of rooms with a random size (within the given constraints), cooridors connecting the rooms, a small amount of up and down staircases, and a random number of monsters (NPCs) with random types and a player (PC).
 Right now, the "randomness" of the level is seeded by time(), so the generated level is only going to be different every second.
 Cooridors are drawn by finding the first room not in the connected set of rooms, and finding the closest room to it not in said set of connected rooms. The cooridor is then drawn to connect the two rooms, following the most direct path. Repeat this until all rooms are connected
+
 
 Things to note:
 	- A cell denoted as a Rock is printed as ' '
@@ -15,9 +13,72 @@ Things to note:
 	- A cell denoted as a cooridor is printed as '#'
 	- A cell denoted as a up staircase is printed as '<'
 	- A cell denoted as a down staircase is printed as '>'
-	- A cell containing a player is printed as '@' with the color 'green' if the color option is selected
-	- A cell whose distance from the player is considered infinity is printed as 'X' when displaying a path map
+	- A cell containing the PC is printed as '@' with the color 'green' if the color option is selected
+	- A cell containing an npc is printed as the type of that npc with the color 'red' if the color option is selected
+	- The PC continually moves to cell (1, 1)
+	- Depending on the number of npcs defined, the game turn can take a while to progress
+	- If a given NPC's next move is going to move it out-of-bounds, or into a cell it cannot move into, it does not move. I was getting seg-faults for monsters moving where they shouldn't be, or just teleporting to an out-of-bounds cell and I hope to fix this for future assignments
 
+NPC type descriptions:
+	- Type 0:
+		- npc is unintelligent, non-telepathic, non-tunneling, and predictable
+			it randomly selectes a direction and moves in a straight line in that direction until it meets a cell that's immutable or a wall
+			at which point it thinks hard for a turn and picks a random direction and continues in a straight line
+	- Type 1:
+		- npc is intelligent, non-telepathic, non-tunneling, and predictable
+			it wanders like npc_0 until it sees the pc, then takes the shortest, non-tunneling path to it
+			if it cannot see the pc, and it has seen the pc already, it takes the shortest path to the pc's last known location
+			after it reaches said location without seeing the player, it goes back to wandering
+			it also intentionally avoids cells other npcs occupy as to not kill them
+	- Type 2:
+		- npc is unintelligent, telepathic, non-tunneling, and predictable
+			it moves towards the player, not necessarily taking the shortest path, excluding immutable and wall cells
+	- Type 3:
+		- npc is intelligent, telepathic, non-tunneling, and predictable
+			it moves towards the player constantly, always taking the shortest non-tunneling path
+			it also intentionally avoids cells other npcs occupy as to not kill them
+	- Type 4:
+		- npc is unintelligent, non-telepathic, tunneling, and predictable
+			it moves like npc_0, but it can tunnel through walls
+			if left alone long enough, this npc will eventually make every cell not immutable and not a room a cooridor
+	- Type 5:
+		- npc is intelligent, non-telepathic, tunneling, and predictable
+			it wanders like npc_3 until it sees the pc, then takes the shortest path to it
+			if it cannot see the pc, and it has already seen the pc, it takes the shortest path to the pc's last known location
+			after it reaches said location without seeing the player, it goes back to wandering
+			it also intentionally avoids cells other npcs occupy as to not kill them
+	- Type 6:
+		- npc is unintelligent, telepathic, tunneling, and predictable
+			it moves towards the player, not necessarily taking the shortest path, excluding immutable cells
+			it always tries to bring the delta y and delta x between it and the player to 0; if both already are 0, it acts like a CASE_0 npc
+	- Type 7:
+		- npc is intelligent, telepathic, tunneling, and predictable
+			it moves towards the player constantly, always taking the shortest path
+			it also intentionally avoids cells other npcs occupy as to not kill them
+	- Type 8:
+		- npc is intelligent, non-telepathic, non-tunneling, and eradic
+			it has a 50% chance of being a type_0 npc, or randomly moving to a room/cooridor cell next to it
+	- Type 9:
+		- npc is unintelligent, telepathic, non-tunneling, and eradic
+			it has a 50% chance of being a type_1 npc, or randomly moving to a room/cooridor cell next to it
+	- Type A:
+		- npc is unintelligent, telepathic, non-tunneling, and eradic
+			it has a 50% chance of being a type_2 npc, or randomly moving to a room/cooridor cell next to it
+	- Type B:
+		- npc is intelligent, telepathic, non-tunneling, and eradic
+			it has a 50% chance of being a type_3 npc, or randomly moving to a room/cooridor cell next to it
+	- Type C:
+		- npc is unintelligent, non-telepathic, tunneling, and eradic
+			it has a 50% chance of being a type_4 npc, or randomly moving to any cell (besides immutable ones)
+	- Type D:
+		- npc is intelligent, non-telepathic, tunneling, and eradic
+			it has a 50% chance of being a type_5 npc, or randomly moving to any cell (besides immutable ones)
+	- Type E:
+		- npc is unintelligent, telepathic, tunneling, and eradic
+			it has a 50% change of being a type_6 npc, or randomly moving to any cell (besides immutable ones)
+	- Type F:
+		- npc is intelligent, telepathic, tunneling, and eradic
+			it has a 50% chance of being a type_7 npc, or randomly moving to any cell (besides immutable ones)
 
 To run the program, run the Makefile, and enter './rouge.o'. The valid command arguments are defined as follows:
 	It is assummed that an argument is precedded with a "--" and arguments have no such prefix. 
@@ -58,7 +119,7 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 		- default behavior: Nothing is printed with color
 		- example command: --color
 	- Print cell attributes:
-		- flag: print-cell | p-c
+		- flag: print-cell | pc
 		- arguments: <h nt t c>
 		- description:
 			- <h>  is entered - A hardness map is printed after the base dungeon is printed. This will show all the hardness values of all the cells as a two-digit hex number. A row and column key is also displayed
@@ -68,7 +129,20 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 		- notes: Arguments <nt> and <t> are automatically printed for assignment 1.03, maps are printed in the order <base> <nt> <t> <h> <c>
 		- default behavior: No additional cell information is printed after dungeon generation. Only the base dungeon is printed
 		- example command: --p-c h nt c
-	
+	- Number of monsters to generated
+		- flag: nummon | nm
+		- arguments: <uint>
+		- description: Generates <uint> number of npcs in the dungeon
+		- notes: <uint> should be non-negative. If <uint> is more than the max amount of cells in the dungeon, <uint> is truncated to the max cells
+		- default behavior: A random number of npcs between <num_rooms> and <num_rooms * 2> are generated
+		- example command: --nm 20
+	- FPS to run the game at:
+		- flag: fps
+		- arguments <float>
+		- description: Runs the game at <float> frames-per-second
+		- notes: Depending on the number of npcs generated, turns can take longer than <float> to complete
+		- default behavior: Game runs at 1 fps
+		- example command: --fps 0.5
 
 A command to run this application with all arguments defined may look as follows:
-	./rouge.o [<--print | --p> <b | f>] [<--load | --l> <filepath>] [<--save | --s> <filepath>] [--color] [<--print-cell | --p-c> <h nt t c>]
+	./rouge.o [<--print | --p> <b | f>] [<--load | --l> <filepath>] [<--save | --s> <filepath>] [--color] [<--print-cell | --pc> <h nt t c>] [<--nummmon | --nm> <uint>] [<--fps> <float>]

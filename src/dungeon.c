@@ -1248,7 +1248,7 @@ Coordinate dungeon_move_npc8(Dungeon *dungeon, Character_NPC *npc) {
 	
 	/* 
 		npc is unintelligent, non-telepathic, non-tunneling, and eradic
-		it it has a 50% chance of being a CASE_0 npc, or randomly selecting a room/cooridor cell next to it to move to
+		it it has a 50% chance of being a type_0 npc, or randomly selecting a room/cooridor cell next to it to move to
 	*/
 	
 	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc0(dungeon, npc); }
@@ -1259,7 +1259,7 @@ Coordinate dungeon_move_npc9(Dungeon *dungeon, Character_NPC *npc) {
 	
 	/* 
 		npc is intelligent, non-telepathic, non-tunneling, and eradic
-		it has a 50% chance of being a CASE_1 npc, or randomly moving to a room/cooridor cell next to it
+		it has a 50% chance of being a type_1 npc, or randomly moving to a room/cooridor cell next to it
 	*/
 	
 //	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc1(dungeon, npc); }
@@ -1270,7 +1270,7 @@ Coordinate dungeon_move_npcA(Dungeon *dungeon, Character_NPC *npc) {
 	
 	/* 
 		npc is unintelligent, telepathic, non-tunneling, and eradic
-		it has a 50% chance of being a CASE_2 npc, or randomly moving to a room/cooridor cell next to it
+		it has a 50% chance of being a type_2 npc, or randomly moving to a room/cooridor cell next to it
 	*/
 	
 	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc2(dungeon, npc); }
@@ -1281,7 +1281,7 @@ Coordinate dungeon_move_npcB(Dungeon *dungeon, Character_NPC *npc) {
 	
 	/* 
 		npc is intelligent, telepathic, non-tunneling, and eradic
-		it has a 50% chance of being a CASE_3 npc, or randomly moving to a room/cooridor cell next to it
+		it has a 50% chance of being a type_3 npc, or randomly moving to a room/cooridor cell next to it
 	*/
 	
 	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc3(dungeon, npc); }
@@ -1292,7 +1292,7 @@ Coordinate dungeon_move_npcC(Dungeon *dungeon, Character_NPC *npc) {
 	
 	/* 
 		npc is unintelligent, non-telepathic, tunneling, and eradic
-		it has a 50% chance of being a CASE_4 npc, or randomly moving to any cell (besides immutable ones)
+		it has a 50% chance of being a type_4 npc, or randomly moving to any cell (besides immutable ones)
 	*/
 	
 	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc4(dungeon, npc); }
@@ -1303,7 +1303,7 @@ Coordinate dungeon_move_npcD(Dungeon *dungeon, Character_NPC *npc) {
 	
 	/* 
 		npc is intelligent, non-telepathic, tunneling, and eradic
-		it has a 50% chance of being a CASE_5 npc, or randomly moving to any cell (besides immutable ones)
+		it has a 50% chance of being a type_5 npc, or randomly moving to any cell (besides immutable ones)
 	*/
 	
 	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc5(dungeon, npc); }
@@ -1314,7 +1314,7 @@ Coordinate dungeon_move_npcE(Dungeon *dungeon, Character_NPC *npc) {
 	
 	/* 
 		npc is unintelligent, telepathic, tunneling, and eradic
-		it has a 50% change of being a CASE_6 npc, or randomly moving to any cell (besides immutable ones)
+		it has a 50% change of being a type_6 npc, or randomly moving to any cell (besides immutable ones)
 	*/
 	
 	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc6(dungeon, npc); }
@@ -1325,7 +1325,7 @@ Coordinate dungeon_move_npcF(Dungeon *dungeon, Character_NPC *npc) {
 	
 	/* 
 		npc is intelligent, telepathic, tunneling, and eradic
-		it has a 50% chance of being a CASE_7 npc, or randomly moving to any cell (besides immutable ones)
+		it has a 50% chance of being a type_7 npc, or randomly moving to any cell (besides immutable ones)
 	*/
 	
 	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc7(dungeon, npc); }
