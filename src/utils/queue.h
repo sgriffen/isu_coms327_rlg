@@ -45,6 +45,8 @@ int queue_is_full(Queue queue);
 
 QueueNode* queue_peek(Queue *queue);
 
+QueueNode* queue_append(Queue *queue, QueueNode node);
+
 QueueNode* queue_enqueue(Queue *queue, QueueNode node);
 
 QueueNode queue_dequeue(Queue *queue);

@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 /******* include custom libs ******/
-#include "character.h"
+#include "./character.h"
+#include "./utils/movement.h"
 
 /*********** global vars **********/
 
@@ -14,6 +15,7 @@ Character_PC character_init_pc(Coordinate loc, uint16_t hp, uint16_t damage, uin
 	Character_PC pc = {
 		
 		.location = loc,
+		.prev_location = loc,
 		.hp = hp,
 		.damage = damage,
 		.speed = speed

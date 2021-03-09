@@ -117,7 +117,7 @@ void dungeon_finit(Dungeon *dungeon, uint8_t f_pc_y, uint8_t f_pc_x, uint8_t *f_
 		.x = f_pc_x
 	};
 	Character_PC pc = character_init_pc(pc_loc, 1, 1, PC_SPEED);
-	dungeon->pc = pc;	
+	dungeon->pc = pc;
 //	printf("debug -- placed PC\n");
 	
 //	printf("debug -- file read offset: [%ld]\n", f_read_offset);
@@ -584,8 +584,8 @@ void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs) {
 	
 	for (i = 0; i < num_npcs; i++) {
 		
-		uint8_t type = ((utils_rand_chance(50, NULL)) << 3) | ((utils_rand_chance(50, NULL)) << 2) | ((utils_rand_chance(50, NULL)) << 1) | ((utils_rand_chance(50, NULL)) << 0);
-//		uint8_t type = 0; //define type for debugging
+//		uint8_t type = ((utils_rand_chance(50, NULL)) << 3) | ((utils_rand_chance(50, NULL)) << 2) | ((utils_rand_chance(50, NULL)) << 1) | ((utils_rand_chance(50, NULL)) << 0);
+		uint8_t type = 0; //define type for debugging
 //		printf("-- debug -- npc type:[%d]\n", type);
 		Coordinate loc;
 		
@@ -594,7 +594,7 @@ void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs) {
 			loc.y = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_height, NULL);
 			loc.x = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_width, NULL);
 			
-			while(loc.y == dungeon->pc.location.y && loc.x == dungeon->pc.location.x && j < DUNGEON_MAX_CHANCE_COUNT) {
+			while(coordinate_is_same(loc, dungeon->pc.location) && j < DUNGEON_MAX_CHANCE_COUNT) {
 				
 				loc.y = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_height, NULL);
 				loc.x = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_width, NULL);
@@ -608,7 +608,7 @@ void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs) {
 			loc.y = utils_rand_between(dungeon->rooms[room_index].tl.y, dungeon->rooms[room_index].br.y, NULL);
 			loc.x = utils_rand_between(dungeon->rooms[room_index].tl.x, dungeon->rooms[room_index].br.x, NULL);
 			
-			while(loc.y == dungeon->pc.location.y && loc.x == dungeon->pc.location.x && j < DUNGEON_MAX_CHANCE_COUNT) {
+			while(coordinate_is_same(loc, dungeon->pc.location) && j < DUNGEON_MAX_CHANCE_COUNT) {
 				
 				loc.y = utils_rand_between(dungeon->rooms[room_index].tl.y+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.y-ROOM_BORDER_WIDTH, NULL);
 				loc.x = utils_rand_between(dungeon->rooms[room_index].tl.x+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.x-ROOM_BORDER_WIDTH, NULL);
@@ -632,704 +632,10 @@ void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs) {
 	return;
 }
 
-int dungeon_coordinate_inbounds(Coordinate location) {
+int dungeon_coordinate_inbounds(Coordinate coord) {
 	
-	if (location.y > 0 && location.y < DUNGEON_HEIGHT && location.x > 0 && location.x < DUNGEON_WIDTH) { return 1; }
+	if (coord.y > 0 && coord.y < DUNGEON_HEIGHT && coord.x > 0 && coord.x < DUNGEON_WIDTH) { return 1; }
 	return 0;
-}
-
-Coordinate dungeon_move_towards_ntunneling(Dungeon dungeon, Coordinate start, Coordinate end) {
-	
-	Coordinate next = {
-		
-		.y = start.y,
-		.x = start.x
-	};
-	
-	if (!dungeon_coordinate_inbounds(start)) {
-		
-		next.y = 0;
-		next.x = 0;
-		
-		return next;
-	}
-	if (!dungeon_coordinate_inbounds(end)) {
-		
-		next.y = 0;
-		next.x = 0;
-		
-		return next;
-	}
-	
-	if (start.y < end.y && !cell_immutable_ntunneling(dungeon.cells[(start.y)+1][start.x])) 		{ next.y = start.y + 1; }
-	else if (start.y > end.y && !cell_immutable_ntunneling(dungeon.cells[(start.y)-1][start.x])) 	{ next.y = start.y - 1; }
-	else 																							{ next.y = start.y; }
-	
-	if (start.x < end.x && !cell_immutable_ntunneling(dungeon.cells[start.y][(start.x)+1])) 		{ next.x = start.x + 1; }
-	else if (start.x > end.x && !cell_immutable_ntunneling(dungeon.cells[start.y][(start.x)-1]))	{ next.x = start.x - 1; }
-	else 																							{ next.x = start.x; }
-	
-	return next;
-}
-
-Coordinate dungeon_move_towards_tunneling(Dungeon dungeon, Coordinate start, Coordinate end) {
-	
-	Coordinate next = {
-		
-		.y = start.y,
-		.x = start.x
-	};
-	
-	if (start.y < end.y && !cell_immutable_tunneling(dungeon.cells[(start.y)+1][start.x])) 		{ next.y = start.y + 1; }
-	else if (start.y > end.y && !cell_immutable_tunneling(dungeon.cells[(start.y)-1][start.x])) { next.y = start.y - 1; }
-	else 																						{ next.y = start.y; }
-	
-	if (start.x < end.x && !cell_immutable_tunneling(dungeon.cells[(start.y)+1][start.x])) 		{ next.x = start.x + 1; }
-	else if (start.x > end.x && !cell_immutable_tunneling(dungeon.cells[(start.y)-1][start.x])) { next.x = start.x - 1; }
-	else 																						{ next.x = start.x; }
-		
-	return next;
-}
-
-Coordinate dungeon_move_min_ntunneling(Dungeon dungeon, Coordinate location) {
-	
-	Coordinate next = {
-		
-		.y = location.y,
-		.x = location.x
-	};
-	
-	if (!dungeon_coordinate_inbounds(location)) {
-		
-		next.y = 0;
-		next.x = 0;
-		
-		return next;
-	}
-	
-	uint32_t curr_weight = dungeon.cells[location.y][location.x].weight_ntunneling;
-	
-	if (dungeon.cells[(location.y)-1][(location.x)].weight_ntunneling < curr_weight) {
-		
-		next.y = location.y - 1;
-		next.x = location.x;
-	}
-	else if (dungeon.cells[(location.y)-1][(location.x)+1].weight_ntunneling < curr_weight) {
-		
-		next.y = location.y - 1;
-		next.x = location.x + 1;
-	}
-	else if (dungeon.cells[(location.y)][(location.x)+1].weight_ntunneling < curr_weight) {
-		
-		next.y = location.y;
-		next.x = location.x + 1;
-	}
-	else if (dungeon.cells[(location.y)+1][(location.x)+1].weight_ntunneling < curr_weight) {
-		
-		next.y = location.y + 1;
-		next.x = location.x + 1;
-	}
-	else if (dungeon.cells[(location.y)+1][(location.x)].weight_ntunneling < curr_weight) {
-		
-		next.y = location.y + 1;
-		next.x = location.x;
-	}
-	else if (dungeon.cells[(location.y)+1][(location.x)-1].weight_ntunneling < curr_weight) {
-		
-		next.y = location.y + 1;
-		next.x = location.x - 1;
-	}
-	else if (dungeon.cells[(location.y)][(location.x)-1].weight_ntunneling < curr_weight) {
-		
-		next.y = location.y;
-		next.x = location.x - 1;
-	}
-	else {
-		
-		next.y = location.y - 1;
-		next.x = location.x - 1;
-	}
-	
-	return next;
-}
-
-Coordinate dungeon_move_min_tunneling(Dungeon dungeon, Coordinate location) {
-	
-	Coordinate next = {
-		
-		.y = location.y,
-		.x = location.x
-	};
-	
-	if (!dungeon_coordinate_inbounds(location)) {
-		
-		next.y = 0;
-		next.x = 0;
-		
-		return next;
-	}
-	
-	uint32_t curr_weight = dungeon.cells[location.y][location.x].weight_tunneling;
-	
-	if (dungeon.cells[(location.y)-1][(location.x)].weight_tunneling < curr_weight) {
-		
-		next.y = location.y - 1;
-		next.x = location.x;
-	}
-	else if (dungeon.cells[(location.y)-1][(location.x)+1].weight_tunneling < curr_weight) {
-		
-		next.y = location.y - 1;
-		next.x = location.x + 1;
-	}
-	else if (dungeon.cells[(location.y)][(location.x)+1].weight_tunneling < curr_weight) {
-		
-		next.y = location.y;
-		next.x = location.x + 1;
-	}
-	else if (dungeon.cells[(location.y)+1][(location.x)+1].weight_tunneling < curr_weight) {
-		
-		next.y = location.y + 1;
-		next.x = location.x + 1;
-	}
-	else if (dungeon.cells[(location.y)+1][(location.x)].weight_tunneling < curr_weight) {
-		
-		next.y = location.y + 1;
-		next.x = location.x;
-	}
-	else if (dungeon.cells[(location.y)+1][(location.x)-1].weight_tunneling < curr_weight) {
-		
-		next.y = location.y + 1;
-		next.x = location.x - 1;
-	}
-	else if (dungeon.cells[(location.y)][(location.x)-1].weight_tunneling < curr_weight) {
-		
-		next.y = location.y;
-		next.x = location.x - 1;
-	}
-	else {
-		
-		next.y = location.y - 1;
-		next.x = location.x - 1;
-	}
-	
-	return next;
-}
-
-Coordinate dungeon_move_rand_ntunneling(Dungeon dungeon, Coordinate location) {
-	
-	int i = 0;
-	
-	Coordinate next = {
-		
-		.y = location.y,
-		.x = location.x
-	};
-	Coordinate prev_next = next;
-	
-	do {
-		
-		int move = utils_rand_between(1, 4, NULL);
-			
-		if (move == 1 && location.y > 0 && !cell_immutable_ntunneling(dungeon.cells[location.y-1][location.x])) {
-				
-			next.y = (location.y)-1;
-			next.x = (location.x);
-		}
-		else if (move == 2 && location.x < DUNGEON_WIDTH && !cell_immutable_ntunneling(dungeon.cells[location.y][location.x+1])) {
-			
-			next.y = (location.y);
-			next.x = (location.x)+1;
-		}
-		else if (move == 3 && location.y < DUNGEON_HEIGHT && !cell_immutable_ntunneling(dungeon.cells[location.y+1][location.x])) {
-			
-			next.y = (location.y)+1;
-			next.x = (location.x);
-		}
-		else if (location.x > 0 && !cell_immutable_ntunneling(dungeon.cells[location.y][location.x-1])) {
-			
-			next.y = (location.y);
-			next.x = (location.x)-1;
-		}
-		i++;
-	} while (cell_immutable_ntunneling(dungeon.cells[next.y][next.x]) && i < DUNGEON_MIN_CHANCE_COUNT);
-	if (i >= DUNGEON_MIN_CHANCE_COUNT) { next = prev_next; }
-	i = 0;
-	
-	
-	return next;
-}
-
-Coordinate dungeon_move_rand_tunneling(Dungeon dungeon, Coordinate location) {
-	
-	int i = 0;
-	
-	Coordinate next = {
-		
-		.y = location.y,
-		.x = location.x
-	};
-	Coordinate prev_next = next;
-	
-	do {
-		
-		int move = utils_rand_between(1, 8, NULL);
-		
-		if (move == 1 && location.y > 0 && !cell_immutable_tunneling(dungeon.cells[location.y-1][location.x])) {
-				
-			next.y = (location.y)-1;
-			next.x = (location.x);
-		}
-		else if (move == 2 && location.y > 0 && location.x < DUNGEON_WIDTH && !cell_immutable_tunneling(dungeon.cells[location.y-1][location.x+1])) {
-			
-			next.y = (location.y)-1;
-			next.x = (location.x)+1;
-		}
-		else if (move == 3 && location.x < DUNGEON_WIDTH && !cell_immutable_ntunneling(dungeon.cells[location.y][location.x+1])) {
-			
-			next.y = (location.y);
-			next.x = (location.x)+1;
-		}
-		else if (move == 4 && location.y < DUNGEON_HEIGHT && location.x < DUNGEON_WIDTH && !cell_immutable_tunneling(dungeon.cells[location.y+1][location.x+1])) {
-			
-			next.y = (location.y)+1;
-			next.x = (location.x)+1;
-		}
-		else if (move == 5 && location.y < DUNGEON_HEIGHT && !cell_immutable_tunneling(dungeon.cells[location.y+1][location.x])) {
-				
-			next.y = (location.y)+1;
-			next.x = (location.x);
-		}
-		else if (move == 6 && location.y < DUNGEON_HEIGHT && location.x < 0&& !cell_immutable_tunneling(dungeon.cells[location.y+1][location.x-1])) {
-			
-			next.y = (location.y)+1;
-			next.x = (location.x)-1;
-		}
-		else if (move == 7 && location.x > 0 && !cell_immutable_tunneling(dungeon.cells[location.y][location.x-1])) {
-			
-			next.y = (location.y);
-			next.x = (location.x)-1;
-		}
-		else if (location.y > 0 && location.x > 0 && !cell_immutable_tunneling(dungeon.cells[location.y-1][location.x-1])) {
-			
-			next.y = (location.y)-1;
-			next.x = (location.x)-1;
-		}
-		i++;
-	} while (cell_immutable_tunneling(dungeon.cells[next.y][next.x]) && i < DUNGEON_MIN_CHANCE_COUNT);
-	if (i >= DUNGEON_MIN_CHANCE_COUNT) { next = prev_next; }
-	i = 0;
-	
-	return next;
-}
-
-Coordinate dungeon_move_pc(Dungeon *dungeon, Character_PC *pc) {
-	
-	Coordinate next = {
-		
-		.y = pc->location.y,
-		.x = pc->location.x
-	};
-	
-	if (pc->location.y > DUNGEON_BORDER_WIDTH) { next.y = (pc->location.y)-1; }
-	if (pc->location.x > DUNGEON_BORDER_WIDTH) { next.x = (pc->location.x)-1; }
-	
-	return next;
-}
-
-Coordinate dungeon_move_npc0(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is unintelligent, non-telepathic, non-tunneling, and predictable
-		it randomly selectes a direction and moves in a straight line in that direction until it meets a cell that's immutable or a wall
-		at which point it thinks hard for a turn and picks a random direction and continues in a straight line
-	*/
-	
-	Coordinate next = {
-		
-		.y = 0,
-		.x = 0
-	};
-	
-	next = dungeon_move_towards_ntunneling(*dungeon, npc->prev_location, npc->location);
-	
-//	printf("-- debug -- npc_0 wants to move to y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (coordinate_is_same(npc->location, npc->prev_location)) { next = dungeon_move_rand_ntunneling(*dungeon, npc->location); }
-	
-//	printf("-- debug -- npc_0 moving to y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) { next = npc->location; }
-	return next;
-}
-
-Coordinate dungeon_move_npc1(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/*
-		npc is intelligent, non-telepathic, non-tunneling, and predictable
-		it wanders like npc_0 until it sees the pc, then takes the shortest, non-tunneling path to it
-		if it cannot see the pc, and it has seen the pc already, it takes the shortest path to the pc's last known location
-		after it reaches said location without seeing the player, it goes back to wandering
-		it also intentionally avoids cells other npcs occupy as to not kill them
-	*/
-	
-	int i = 0;
-	
-	Coordinate next = {
-		
-		.y = 0,
-		.x = 0
-	};
-	
-//	printf("-- debug -- npc_1 last known player location y:[%d] x:[%d]\n", npc->last_known.y, npc->last_known.x);
-	
-	Coordinate known = dungeon_los(*dungeon, npc->location, dungeon->pc.location);
-	if (known.y && known.x) {
-		
-		known = dungeon->pc.location;
-		npc->last_known = dungeon->pc.location;
-	}
-//	printf("-- debug -- npc_1 known player location y:[%d] x:[%d]\n", known.y, known.x);
-	
-	if (cell_immutable_ntunneling(dungeon->cells[npc->last_known.y][npc->last_known.x]) && cell_immutable_ntunneling(dungeon->cells[known.y][known.x])) {
-		
-		next = dungeon_move_npc0(dungeon, npc);
-		do {
-			
-			next = dungeon_move_rand_ntunneling(*dungeon, npc->location);
-			i++;
-		} while (dungeon_cell_contains_npc(*dungeon, next, npc->id) && i < DUNGEON_MIN_CHANCE_COUNT);
-		if (i >= DUNGEON_MIN_CHANCE_COUNT) { next = npc->location; }
-		i = 0;
-	}
-	
-//	printf("-- debug -- npc_1 wants to move to location y:[%d] x:[%d]\n", next.y, next.x);
-
-	if (!cell_immutable_ntunneling(dungeon->cells[known.y][known.x])) { next = dungeon_move_min_ntunneling(*dungeon, known); }
-	else if (!cell_immutable_ntunneling(dungeon->cells[npc->last_known.y][npc->last_known.x])) { next = dungeon_move_towards_ntunneling(*dungeon, npc->location, npc->last_known); }
-	
-	if (!(npc->last_known.y - npc->location.y) && !(npc->last_known.x - npc->location.x)) {
-		
-		do {
-			
-			next = dungeon_move_rand_ntunneling(*dungeon, npc->location);
-			i++;
-		} while (dungeon_cell_contains_npc(*dungeon, next, npc->id) && i < DUNGEON_MIN_CHANCE_COUNT);
-		if (i >= DUNGEON_MIN_CHANCE_COUNT) { next = npc->location; }
-		i = 0;
-	}
-	
-//	printf("-- debug -- npc_1 moving to location y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) { next = npc->location; }
-	return next;
-}
-
-Coordinate dungeon_move_npc2(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is unintelligent, telepathic, non-tunneling, and predictable
-		it moves towards the player, not necessarily taking the shortest path, excluding immutable and wall cells
-	*/
-	
-	Coordinate next = {
-		
-		.y = 0,
-		.x = 0
-	};
-	
-	next = dungeon_move_min_ntunneling(*dungeon, npc->location);
-	
-//	printf("-- debug -- npc_2 wants to move to y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (utils_rand_chance(45, NULL)) {
-		
-		if (utils_rand_chance(50, NULL) && !cell_immutable_ntunneling(dungeon->cells[npc->location.y][next.x])) 	{ next.y = npc->location.y; }
-		else if (!cell_immutable_ntunneling(dungeon->cells[next.y][npc->location.x]))							{ next.x = npc->location.x; }
-	}
-	
-//	printf("-- debug -- npc_2 moving to y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) { next = npc->location; }
-	return next;
-}
-Coordinate dungeon_move_npc3(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is intelligent, telepathic, non-tunneling, and predictable
-		it moves towards the player constantly, always taking the shortest non-tunneling path
-		it also intentionally avoids cells other npcs occupy as to not kill them
-	*/
-	
-	int i = 0;
-	
-	Coordinate next = {
-		
-		.y = 0,
-		.x = 0
-	};
-	
-	next = dungeon_move_min_ntunneling(*dungeon, npc->location);
-	
-//	printf("-- debug -- npc_3 wants to move to y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (dungeon_cell_contains_npc(*dungeon, next, npc->id)) {
-		
-		do {
-			
-			next = dungeon_move_rand_ntunneling(*dungeon, npc->location);
-			i++;
-		} while (dungeon_cell_contains_npc(*dungeon, next, npc->id) && i < DUNGEON_MIN_CHANCE_COUNT);
-		if (i >= DUNGEON_MIN_CHANCE_COUNT) { next = npc->location; }
-		i = 0;
-	}
-	
-//	printf("-- debug -- npc_3 moving to y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) { next = npc->location; }
-	return next;
-}
-
-Coordinate dungeon_move_npc4(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is unintelligent, non-telepathic, tunneling, and predictable
-		it moves like npc_0, but it can tunnel through walls
-		if left alone long enough, this npc will eventually make every cell not immutable and not a room a cooridor
-	*/
-	
-	Coordinate next = {
-		
-		.y = 0,
-		.x = 0
-	};
-	
-	next = dungeon_move_towards_tunneling(*dungeon, npc->prev_location, npc->location);
-	
-//	printf("-- debug -- npc_0 wants to move to y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (coordinate_is_same(npc->location, npc->prev_location)) { next = dungeon_move_rand_tunneling(*dungeon, npc->location); }
-	
-//	printf("-- debug -- npc_0 moving to y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (cell_immutable_tunneling(dungeon->cells[next.y][next.x])) { next = npc->location; }
-	return next;
-}
-
-Coordinate dungeon_move_npc5(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is intelligent, non-telepathic, tunneling, and predictable
-		it wanders like npc_3 until it sees the pc, then takes the shortest path to it
-		if it cannot see the pc, and it has already seen the pc, it takes the shortest path to the pc's last known location
-		after it reaches said location without seeing the player, it goes back to wandering
-		it also intentionally avoids cells other npcs occupy as to not kill them
-	*/
-	
-	int i = 0;
-	
-		Coordinate next = {
-		
-		.y = 0,
-		.x = 0
-	};
-	
-//	printf("-- debug -- npc_5 last known player location y:[%d] x:[%d]\n", npc->last_known.y, npc->last_known.x);
-	
-	Coordinate known = dungeon_los(*dungeon, npc->location, dungeon->pc.location);
-	if (known.y && known.x) {
-		
-		known = dungeon->pc.location;
-		npc->last_known = dungeon->pc.location;
-	}
-//	printf("-- debug -- npc_5 known player location y:[%d] x:[%d]\n", known.y, known.x);
-	
-	if (cell_immutable_tunneling(dungeon->cells[npc->last_known.y][npc->last_known.x]) && cell_immutable_tunneling(dungeon->cells[known.y][known.x])) {
-		
-		next = dungeon_move_npc3(dungeon, npc);
-		do {
-			
-			next = dungeon_move_rand_ntunneling(*dungeon, npc->location);
-			i++;
-		} while (dungeon_cell_contains_npc(*dungeon, next, npc->id) && i < DUNGEON_MIN_CHANCE_COUNT);
-		if (i >= DUNGEON_MIN_CHANCE_COUNT) { next = npc->location; }
-		i = 0;
-	}
-	
-//	printf("-- debug -- npc_5 wants to move to location y:[%d] x:[%d]\n", next.y, next.x);
-
-	if (!cell_immutable_tunneling(dungeon->cells[known.y][known.x])) { next = dungeon_move_min_tunneling(*dungeon, known); }
-	else if (!cell_immutable_tunneling(dungeon->cells[npc->last_known.y][npc->last_known.x])) { next = dungeon_move_towards_tunneling(*dungeon, npc->location, npc->last_known); }
-	
-	if (!(npc->last_known.y - npc->location.y) && !(npc->last_known.x - npc->location.x)) {
-		
-		do {
-			
-			next = dungeon_move_rand_tunneling(*dungeon, npc->location);
-			i++;
-		} while (dungeon_cell_contains_npc(*dungeon, next, npc->id) && i < DUNGEON_MIN_CHANCE_COUNT);
-		if (i >= DUNGEON_MIN_CHANCE_COUNT) { next = npc->location; }
-		i = 0;
-	}
-	
-//	printf("-- debug -- npc_5 moving to location y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (cell_immutable_tunneling(dungeon->cells[next.y][next.x])) { next = npc->location; }
-	return next;
-}
-
-Coordinate dungeon_move_npc6(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is unintelligent, telepathic, tunneling, and predictable
-		it moves towards the player, not necessarily taking the shortest path, excluding immutable cells
-		it always tries to bring the delta y and delta x between it and the player to 0; if both already are 0, it acts like a CASE_0 npc
-	*/
-	
-	Coordinate next = {
-		
-		.y = 0,
-		.x = 0
-	};
-	
-	next = dungeon_move_min_tunneling(*dungeon, npc->location);
-	
-//	printf("-- debug -- npc_6 wants to move to y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (utils_rand_chance(45, NULL)) {
-		
-		if (utils_rand_chance(50, NULL) && !cell_immutable_tunneling(dungeon->cells[npc->location.y][next.x])) 	{ next.y = npc->location.y; }
-		else if (!cell_immutable_tunneling(dungeon->cells[next.y][npc->location.x]))							{ next.x = npc->location.x; }
-	}
-	
-//	printf("-- debug -- npc_6 moving to y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (cell_immutable_tunneling(dungeon->cells[next.y][next.x])) { next = npc->location; }
-	return next;
-}
-
-Coordinate dungeon_move_npc7(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is intelligent, telepathic, tunneling, and predictable
-		it moves towards the player constantly, always taking the shortest path
-		it also intentionally avoids cells other npcs occupy as to not kill them
-	*/
-	
-	int i = 0;
-	
-	Coordinate next = {
-		
-		.y = 0,
-		.x = 0
-	};
-	
-	next = dungeon_move_min_tunneling(*dungeon, npc->location);
-	
-//	printf("-- debug -- npc_7 wants to move to y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (dungeon_cell_contains_npc(*dungeon, next, npc->id)) {
-		
-		do {
-			
-			next = dungeon_move_rand_tunneling(*dungeon, npc->location);
-			i++;
-		} while (dungeon_cell_contains_npc(*dungeon, next, npc->id) && i < DUNGEON_MIN_CHANCE_COUNT);
-	}
-	if (i >= DUNGEON_MIN_CHANCE_COUNT) { next = npc->location; }
-	i = 0;
-	
-//	printf("-- debug -- npc_7 moving to y:[%d] x:[%d]\n", next.y, next.x);
-	
-	if (cell_immutable_tunneling(dungeon->cells[next.y][next.x])) { next = npc->location; }
-	return next;
-}
-
-Coordinate dungeon_move_npc8(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is unintelligent, non-telepathic, non-tunneling, and eradic
-		it it has a 50% chance of being a type_0 npc, or randomly selecting a room/cooridor cell next to it to move to
-	*/
-	
-	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc0(dungeon, npc); }
-	return dungeon_move_rand_ntunneling(*dungeon, npc->location);
-}
-
-Coordinate dungeon_move_npc9(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is intelligent, non-telepathic, non-tunneling, and eradic
-		it has a 50% chance of being a type_1 npc, or randomly moving to a room/cooridor cell next to it
-	*/
-	
-//	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc1(dungeon, npc); }
-	return dungeon_move_rand_ntunneling(*dungeon, npc->location);
-}
-
-Coordinate dungeon_move_npcA(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is unintelligent, telepathic, non-tunneling, and eradic
-		it has a 50% chance of being a type_2 npc, or randomly moving to a room/cooridor cell next to it
-	*/
-	
-	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc2(dungeon, npc); }
-	return dungeon_move_rand_ntunneling(*dungeon, npc->location);
-}
-
-Coordinate dungeon_move_npcB(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is intelligent, telepathic, non-tunneling, and eradic
-		it has a 50% chance of being a type_3 npc, or randomly moving to a room/cooridor cell next to it
-	*/
-	
-	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc3(dungeon, npc); }
-	return dungeon_move_rand_ntunneling(*dungeon, npc->location);
-}
-
-Coordinate dungeon_move_npcC(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is unintelligent, non-telepathic, tunneling, and eradic
-		it has a 50% chance of being a type_4 npc, or randomly moving to any cell (besides immutable ones)
-	*/
-	
-	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc4(dungeon, npc); }
-	return dungeon_move_rand_tunneling(*dungeon, npc->location);
-}
-
-Coordinate dungeon_move_npcD(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is intelligent, non-telepathic, tunneling, and eradic
-		it has a 50% chance of being a type_5 npc, or randomly moving to any cell (besides immutable ones)
-	*/
-	
-	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc5(dungeon, npc); }
-	return dungeon_move_rand_tunneling(*dungeon, npc->location);
-}
-
-Coordinate dungeon_move_npcE(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is unintelligent, telepathic, tunneling, and eradic
-		it has a 50% change of being a type_6 npc, or randomly moving to any cell (besides immutable ones)
-	*/
-	
-	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc6(dungeon, npc); }
-	return dungeon_move_rand_tunneling(*dungeon, npc->location);
-}
-
-Coordinate dungeon_move_npcF(Dungeon *dungeon, Character_NPC *npc) {
-	
-	/* 
-		npc is intelligent, telepathic, tunneling, and eradic
-		it has a 50% chance of being a type_7 npc, or randomly moving to any cell (besides immutable ones)
-	*/
-	
-	if (utils_rand_chance(50, NULL)) { return dungeon_move_npc7(dungeon, npc); }
-	return dungeon_move_rand_tunneling(*dungeon, npc->location);
 }
 
 Coordinate dungeon_los(Dungeon dungeon, Coordinate start, Coordinate end) {
@@ -1453,7 +759,7 @@ Coordinate dungeon_los_hilow(Dungeon dungeon, Coordinate start, Coordinate end) 
 	return next;
 }
 
-void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper character, Coordinate next) {
+void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper *character, Coordinate next) {
 	
 	/*
 		Resolves potential collisions with the next cell a character wants to move to, and the current character that's in that cell
@@ -1462,92 +768,89 @@ void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper character, Co
 		Returns the id of an npc if a character moves into the cell the is located in (pc or npc kills npc)
 	*/
 	
-	int i = 0;
+	Character_PC* pc_location = NULL;
+	Character_NPC* npc_location = NULL;
 	
-	if (character.pc) {
+	if (character->pc) {
 		
 //		printf("-- debug -- resolving pc collision\n");
 		
-		i = dungeon_cell_contains_npc(*dungeon, next, 0);
-		if (i) {
+		npc_location = dungeon_cell_contains_npc(dungeon, next);
+		if (npc_location) {
 			
-			dungeon->npcs[i-1].hp -= character.pc->damage;
+			npc_location->hp -= character->pc->damage;
 //			printf("-- debug -- pc-npc collision detected\n");
 		}
 		
-		character.pc->location = next;
+		dungeon->cells[character->pc->location.y][character->pc->location.x].character = NULL;
+		dungeon->cells[next.y][next.x].character = character;
+		
+		character->pc->prev_location = character->pc->location;
+		character->pc->location = next;
 	} else {
 		
 //		printf("-- debug -- resolving npc collision\n");
 		
-		if (dungeon_cell_contains_pc(*dungeon, next)) 	{
+		pc_location = dungeon_cell_contains_pc(dungeon, next);
+		if (pc_location) 	{
 			
-			dungeon->pc.hp -= character.npc->damage;
+			pc_location->hp -= character->npc->damage;
 //			printf("-- debug -- npc-pc collision detected\n");
 		}
-
-		i = dungeon_cell_contains_npc(*dungeon, next, character.npc->id);
-		if (i) {
+		
+		npc_location = dungeon_cell_contains_npc(dungeon, next);
+		if (npc_location && (npc_location->id != character->npc->id)) {
 			
-			dungeon->npcs[i-1].hp -= character.npc->damage;
+			npc_location->hp -= character->npc->damage;
+			
 //			printf("-- debug -- npc-npc collision detected\n");
 		}
 		
-		character.npc->prev_location = character.npc->location;
-		character.npc->location = next;
+		dungeon->cells[character->npc->location.y][character->npc->location.x].character = NULL;
+		dungeon->cells[next.y][next.x].character = character;
+		
+		character->npc->prev_location = character->npc->location;
+		character->npc->location = next;
 		
 //		printf("-- debug -- npc prev location y:[%d] x:[%d]\n", character.npc->prev_location.y, character.npc->prev_location.x);
 //		printf("-- debug -- npc current location y:[%d] x:[%d]\n", character.npc->location.y, character.npc->location.x);
 	}
 	
-	dungeon_npc_sort(dungeon);
-	
 	return;
 }
 
-int dungeon_cell_contains_pc(Dungeon dungeon, Coordinate coord) { return coordinate_is_same(coord, dungeon.pc.location); }
-
-int dungeon_cell_contains_npc(Dungeon dungeon, Coordinate coord, uint32_t npc_exclude) {
+Character_PC* dungeon_cell_contains_pc(Dungeon *dungeon, Coordinate coord) {
 	
-	int i = 0;
+	Character_Wrapper *c = dungeon->cells[coord.y][coord.x].character;
+	if (c && c->pc) { return c->pc; }
 	
-	for (i = 0; i < dungeon.num_npcs; i++) {
-		
-		if (dungeon.npcs[i].id != npc_exclude && coordinate_is_same(coord, dungeon.npcs[i].location)) { return i+1; }
-	}
-	
-	return 0;
+	return NULL;
 }
 
-void dungeon_npc_sort(Dungeon *dungeon) {
+Character_NPC* dungeon_cell_contains_npc(Dungeon *dungeon, Coordinate coord) {
 	
-	int i = 0, j = 0;
-	int num_npcs = 0;
+	Character_Wrapper *c = dungeon->cells[coord.y][coord.x].character;
+	if (c && c->npc) { return c->npc; }
 	
-	for (i = 0; i < (dungeon->num_npcs)-1; i++) {
-		for (j = i; j < dungeon->num_npcs; j++) {
-			
-			if (dungeon->npcs[j].hp > dungeon->npcs[i].hp) {
-				
-				Character_NPC temp = dungeon->npcs[i];
-				dungeon->npcs[i] = dungeon->npcs[j];
-				dungeon->npcs[j] = temp;
-			}
-		}
-	}
+	return NULL;
+}
+
+int dungeon_contains_npcs(Dungeon *dungeon) {
+	
+	int i = 0;
+	int num_npcs_dead = 0;
 	
 	for (i = 0; i < dungeon->num_npcs; i++) {
 		
-		if (dungeon->npcs[i].hp > 0) { num_npcs++; }
+		if (dungeon->npcs[i].hp < 1) { num_npcs_dead++; }
 	}
-	dungeon->num_npcs = num_npcs;
 	
-	return;
+	return dungeon->num_npcs - num_npcs_dead;
 }
 
 void dungeon_print(Dungeon dungeon, int print_fill, int print_color, int print_weight) {
 	
-	int i = 0, j = 0, k = 0;
+	int i = 0, j = 0;
 
 	printf("\n");
 	
@@ -1556,8 +859,6 @@ void dungeon_print(Dungeon dungeon, int print_fill, int print_color, int print_w
 		if (print_weight == 1 && i > -1) { printf("%2d - ", i); }
 		
 		for (j = 0; j < dungeon.width; j++) {
-			
-			int cell_empty = 0;
 			
 			if (print_weight == 1 && i == -2) {
 				
@@ -1569,29 +870,7 @@ void dungeon_print(Dungeon dungeon, int print_fill, int print_color, int print_w
 				if (j == 0) { printf("     --"); }
 				else { printf("--"); }
 			}
-			else if (i > -1) {
-				
-				cell_empty = 1;
-				if ((dungeon.pc.location.y == i && dungeon.pc.location.x == j) && dungeon.pc.hp > 0) { //print pc
-
-					if (print_weight == 1) 	{ character_print_pc(dungeon.pc, 1, print_color); }
-					else 					{ character_print_pc(dungeon.pc, 0, print_color); }
-					cell_empty = 0;
-				} else {
-					for (k = 0; k < dungeon.num_npcs; k++) { //print npcs
-						
-						if ((dungeon.npcs[k].location.y == i && dungeon.npcs[k].location.x == j) && dungeon.npcs[k].hp > 0) {
-							
-							if (print_weight == 1) 	{ character_print_npc(dungeon.npcs[k], 1, print_color); }
-							else 					{ character_print_npc(dungeon.npcs[k], 0, print_color); }
-							cell_empty = 0;
-							
-							break;
-						}
-					}
-				}
-				if (cell_empty) { cell_print(dungeon.cells[i][j], print_fill, print_weight); }
-			}
+			else if (i > -1) { cell_print(dungeon.cells[i][j], print_fill, print_weight, print_color); }
 		}
 		
 		printf("\n");

@@ -44,6 +44,14 @@ int queue_is_full(Queue queue) { return queue.index == queue.size; }
 
 QueueNode* queue_peek(Queue *queue) { return &(queue->nodes[(queue->index)-1]); }
 
+QueueNode* queue_append(Queue *queue, QueueNode node) {
+	
+	if (queue_is_full(*queue)) { return NULL; }
+	
+	node.priority = (queue->nodes[(queue->index)-1].priority) + 1;
+	return queue_enqueue(queue, node);
+}
+
 QueueNode* queue_enqueue(Queue *queue, QueueNode node) {
 	
 	int i = 0;
@@ -55,7 +63,7 @@ QueueNode* queue_enqueue(Queue *queue, QueueNode node) {
 		
 		for (i = queue->index-1; i >= 0; i--) { //start at back of queue
 			
-			if (node.priority > queue->nodes[i].priority) { queue->nodes[i+1] = queue->nodes[i]; } //if node adding has a lower priority (higher value) than the current node in the queue, move current node further forward in queue
+			if (node.priority > queue->nodes[i].priority) { queue->nodes[i+1] = queue->nodes[i]; } //if node adding has a lower priority (higher value) than the current node in the queue, move current node further back in queue
 			else { break; }
 		}
 		
@@ -63,7 +71,7 @@ QueueNode* queue_enqueue(Queue *queue, QueueNode node) {
 	}
 	
 	queue->index++;
-	return &(queue->nodes[queue->index]);
+	return &(queue->nodes[i+1]);
 }
 
 QueueNode queue_dequeue(Queue *queue) {

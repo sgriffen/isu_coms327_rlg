@@ -24,6 +24,7 @@
 typedef struct {
 	
 	Coordinate location;
+	Coordinate prev_location;
 	
 	uint16_t hp;
 	uint8_t speed;
@@ -33,7 +34,7 @@ typedef struct {
 typedef struct {
 	
 	uint32_t id;
-
+	
 	Coordinate location;
 	Coordinate prev_location;
 	Coordinate last_known;

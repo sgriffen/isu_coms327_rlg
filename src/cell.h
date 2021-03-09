@@ -4,6 +4,7 @@
 #define CELL_H
 
 #include "./coordinate.h"
+#include "./character.h"
 
 /********** definitions ***********/
 #define CELL_HARDNESS_MIN 0
@@ -31,6 +32,7 @@ typedef struct Cell {
 	Coordinate location;
 	uint8_t hardness;
 	CellType type;
+	Character_Wrapper *character;
 	
 	uint8_t visited;
 	int meta_data;
@@ -45,6 +47,6 @@ int cell_immutable_ntunneling(Cell cell);
 
 int cell_immutable_tunneling(Cell cell);
 
-void cell_print(Cell cell, int print_fill, int print_weight);
+void cell_print(Cell cell, int print_fill, int print_weight, int print_color);
 
 #endif /* CELL_H */

@@ -49,9 +49,9 @@ typedef struct {
 	
 	uint16_t num_staircases_down;
 	Cell **staircases_down;
-	
+
 	Character_PC pc;
-	
+
 	uint32_t npc_id_next;
 	uint16_t num_npcs;
 	Character_NPC *npcs;
@@ -84,65 +84,19 @@ void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs);
 
 int dungeon_coordinate_inbounds(Coordinate location);
 
-Coordinate dungeon_move_towards_ntunneling(Dungeon dungeon, Coordinate start, Coordinate end);
-
-Coordinate dungeon_move_towards_tunneling(Dungeon dungeon, Coordinate start, Coordinate end);
-
-Coordinate dungeon_move_min_ntunneling(Dungeon dungeon, Coordinate location);
-
-Coordinate dungeon_move_min_tunneling(Dungeon dungeon, Coordinate location);
-
-Coordinate dungeon_move_rand_ntunneling(Dungeon dungeon, Coordinate location);
-
-Coordinate dungeon_move_rand_tunneling(Dungeon dungeon, Coordinate location);
-
-Coordinate dungeon_move_pc(Dungeon *dungeon, Character_PC *pc);
-
-Coordinate dungeon_move_npc0(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npc1(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npc2(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npc3(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npc4(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npc5(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npc6(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npc7(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npc8(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npc9(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npcA(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npcB(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npcC(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npcD(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npcE(Dungeon *dungeon, Character_NPC *npc);
-
-Coordinate dungeon_move_npcF(Dungeon *dungeon, Character_NPC *npc);
-
 Coordinate dungeon_los(Dungeon dungeon, Coordinate start, Coordinate end);
 
 Coordinate dungeon_los_lowhi(Dungeon dungeon, Coordinate start, Coordinate end);
 
 Coordinate dungeon_los_hilow(Dungeon dungeon, Coordinate start, Coordinate end);
 
-void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper character, Coordinate next);
+void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper *character, Coordinate next);
 
-int dungeon_cell_contains_pc(Dungeon dungeon, Coordinate coord);
+Character_PC* dungeon_cell_contains_pc(Dungeon *dungeon, Coordinate coord);
 
-int dungeon_cell_contains_npc(Dungeon dungeon, Coordinate coord, uint32_t npc_exclude);
+Character_NPC* dungeon_cell_contains_npc(Dungeon *dungeon, Coordinate coord);
 
-void dungeon_npc_sort(Dungeon *dungeon);
+int dungeon_contains_npcs(Dungeon *dungeon);
 
 void dungeon_print(Dungeon dungeon, int print_fill, int print_color, int print_weight);
 

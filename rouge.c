@@ -124,17 +124,40 @@ void rouge_init(Dungeon *dungeon, char *argv[], RunArgs run_args) {
 
 void rouge_run(Dungeon *dungeon, RunArgs run_args) {
 	
+	int i = 0;
+	
 	uint64_t turn = 0;
 	uint8_t pc_moved = 0;
 	
-	while (dungeon->pc.hp > 0 && dungeon->num_npcs > 0) {
+	/* wrap pc and npc inside Character wrappers for queue */
+    Character_Wrapper *characters = (Character_Wrapper*)calloc((dungeon->num_npcs)+1, sizeof(Character_Wrapper));
+	Character_Wrapper wrapper_pc = {
+		
+		.pc = &(dungeon->pc),
+		.npc = NULL
+	};
+    characters[0] = wrapper_pc;
+	for (i = 0; i < (dungeon->num_npcs); i++) {
+		
+		Character_Wrapper wrapper_npc = {
+			
+			.pc = NULL,
+			.npc = &(dungeon->npcs[i])
+		};
+        characters[i+1] = wrapper_npc;
+	}
+	
+	/* organize pc and npcs into priority queue based on movement speed */
+	Queue movement_queue = queue_init((dungeon->num_npcs)+1);
+	
+	while (dungeon->pc.hp > 0 && dungeon_contains_npcs(dungeon)) {
 	
 		/* generate paths to player */
 		pathfinder_ntunneling(dungeon, &(dungeon->pc.location)); //generate non-tunneling paths to player
 		pathfinder_tunneling(dungeon, &(dungeon->pc.location)); //generate tunneling paths to player
 		
 		/* move npc and npc */
-		rouge_turn(dungeon, run_args, &turn, &pc_moved);
+		rouge_turn(dungeon, run_args, characters, &movement_queue, &turn, &pc_moved);
 		
 		/* print created/loaded dungeon with desired print flags */
 		if (run_args.print_weight_ntunneling) 	{ dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 2); }	//print non-tunneling weights
@@ -143,84 +166,62 @@ void rouge_run(Dungeon *dungeon, RunArgs run_args) {
 		if (run_args.print_traversal_cost) 		{ dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 4); }	//print traversal cost
 	}
 	
+	free(characters);
+	
 	rouge_gameover(dungeon, run_args, turn, pc_moved);
 	return;
 }
 
-void rouge_turn(Dungeon *dungeon, RunArgs run_args, uint64_t *turn, uint8_t *pc_moved) {
-	
+void rouge_turn(Dungeon *dungeon, RunArgs run_args, Character_Wrapper *characters, Queue *movement_queue, uint64_t *turn, uint8_t *pc_moved) {
+
 	int i = 0;
 	*pc_moved = 0;
-	
-	/* wrap pc and npc inside Character wrappers for queue */
-	Character_Wrapper wrapper_pc = {
-		
-		.pc = &(dungeon->pc),
-		.npc = NULL
-	};
-	Character_Wrapper *wrapper_npcs = (Character_Wrapper*)calloc(dungeon->num_npcs, sizeof(Character_Wrapper));
-	for (i = 0; i < dungeon->num_npcs; i++) {
-		
-		Character_Wrapper wrapper = {
-			
-			.pc = NULL,
-			.npc = &(dungeon->npcs[i])
-		};
-		wrapper_npcs[i] = wrapper;
-	}
-	
-	/* organize pc and npcs into priority queue based on movement speed */
-	Queue queue = queue_init((dungeon->num_npcs)+1);
-	queue_enqueue(&queue, queue_node_init(&(wrapper_pc), CHARACTER_TURN(wrapper_pc.pc->speed)));
-	for (i = 0; i < (dungeon->num_npcs); i++) { queue_enqueue(&queue, queue_node_init(&(wrapper_npcs[i]), CHARACTER_TURN(wrapper_npcs[i].npc->speed))); }
-	
+
+    for (i = 0; i < dungeon->num_npcs; i++) {
+
+        queue_enqueue(movement_queue, queue_node_init(&(characters[i+1]), CHARACTER_TURN(characters[i+1].npc->speed)));
+        dungeon->cells[characters[i+1].npc->location.y][characters[i+1].npc->location.x].character = &(characters[i+1]);
+    }
+    queue_enqueue(movement_queue, queue_node_init(&(characters[0]), CHARACTER_TURN(characters[0].pc->speed)));
+    dungeon->cells[characters[0].pc->location.y][characters[0].pc->location.x].character = &(characters[0]);
+
 	if (!(*turn)) { dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 0); }
 	
 	/* dequeue nodes, stopping at pc node */
-	while (!queue_is_empty(queue)) {
+	while (!queue_is_empty(*movement_queue)) {
 		
-		QueueNode node = queue_dequeue(&queue);
+		QueueNode node = queue_dequeue(movement_queue);
 		Character_Wrapper *wrapper = (Character_Wrapper*)(node.element);
 		
-		if (wrapper->pc) { break; }
-		
-		rouge_move_npc(dungeon, *wrapper);
+		if (wrapper->pc) {
+			
+			/* print dungeon with updated npc positions */
+			dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 0);
+			
+			/* move pc */
+			if (wrapper->pc->hp > 0) {
+				
+				rouge_move_pc(dungeon, wrapper, run_args.fps);
+				*pc_moved = 1;
+			}
+		} else {
+			
+			if (wrapper->npc->hp > 0) { rouge_move_npc(dungeon, wrapper); }
+		}
 		
 		(*turn)++;
 	}
-	
-	/* move pc */
-	rouge_move_pc(dungeon, wrapper_pc, run_args.fps);
-	(*turn)++;
-	*pc_moved = 1;
-	
-	/* print dungeon with updated npc positions */
-	dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 0);
-	
-	/* dequeue rest of nodes, if applicable */
-	while (!queue_is_empty(queue)) {
-		
-		QueueNode node = queue_dequeue(&queue);
-		Character_Wrapper *wrapper = (Character_Wrapper*)(node.element);
-		
-		rouge_move_npc(dungeon, *wrapper);
-		
-		(*turn)++;
-	}
-	
-	/* cleanup memory */
-	free(wrapper_npcs);
 }
 
-void rouge_move_pc(Dungeon *dungeon, Character_Wrapper wrapper, float fps) {
+void rouge_move_pc(Dungeon *dungeon, Character_Wrapper *wrapper, float fps) {
 	
-	Character_PC *pc = wrapper.pc;
+	Character_PC *pc = wrapper->pc;
 	Coordinate next;
 	
-	next = dungeon_move_pc(dungeon, pc);
+	next = move_pc(dungeon, pc);
 	
 	dungeon_resolve_collision(dungeon, wrapper, next);
-	if (cell_immutable_ntunneling(dungeon->cells[next.y][next.x]) > 0) {
+	if (cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) {
 		
 		dungeon->cells[next.y][next.x].hardness = 0;
 		dungeon->cells[next.y][next.x].type = CellType_Cooridor;
@@ -234,9 +235,9 @@ void rouge_move_pc(Dungeon *dungeon, Character_Wrapper wrapper, float fps) {
 	}
 }
 
-void rouge_move_npc(Dungeon *dungeon, Character_Wrapper wrapper) {
+void rouge_move_npc(Dungeon *dungeon, Character_Wrapper *wrapper) {
 	
-	Character_NPC *npc = wrapper.npc;
+	Character_NPC *npc = wrapper->npc;
 	Coordinate next = {
 		
 		.x = 0,
@@ -247,67 +248,67 @@ void rouge_move_npc(Dungeon *dungeon, Character_Wrapper wrapper) {
 	
 	case 1:
 	
-		next = dungeon_move_npc1(dungeon, npc);
+		next = move_npc1(dungeon, npc);
 		break;
 	case 2:
 		
-		next = dungeon_move_npc2(dungeon, npc);
+		next = move_npc2(dungeon, npc);
 		break;
 	case 3:
 		
-		next = dungeon_move_npc3(dungeon, npc);
+		next = move_npc3(dungeon, npc);
 		break;
 	case 4:
 		
-		next = dungeon_move_npc4(dungeon, npc);
+		next = move_npc4(dungeon, npc);
 		break;
 	case 5:
 		
-		next = dungeon_move_npc5(dungeon, npc);
+		next = move_npc5(dungeon, npc);
 		break;
 	case 6:
 		
-		next = dungeon_move_npc6(dungeon, npc);
+		next = move_npc6(dungeon, npc);
 		break;
 	case 7:
 		
-		next = dungeon_move_npc7(dungeon, npc);
+		next = move_npc7(dungeon, npc);
 		break;
 	case 8:
 		
-		next = dungeon_move_npc8(dungeon, npc);
+		next = move_npc8(dungeon, npc);
 		break;
 	case 9:
 		
-		next = dungeon_move_npc9(dungeon, npc);
+		next = move_npc9(dungeon, npc);
 		break;
 	case 10:
 		
-		next = dungeon_move_npcA(dungeon, npc);
+		next = move_npcA(dungeon, npc);
 		break;
 	case 11:
 		
-		next = dungeon_move_npcB(dungeon, npc);
+		next = move_npcB(dungeon, npc);
 		break;
 	case 12:
 		
-		next = dungeon_move_npcC(dungeon, npc);
+		next = move_npcC(dungeon, npc);
 		break;
 	case 13:
 		
-		next = dungeon_move_npcD(dungeon, npc);
+		next = move_npcD(dungeon, npc);
 		break;
 	case 14:
 		
-		next = dungeon_move_npcE(dungeon, npc);
+		next = move_npcE(dungeon, npc);
 		break;
 	case 15:
 		
-		next = dungeon_move_npcF(dungeon, npc);
+		next = move_npcF(dungeon, npc);
 		break;
 	default:
 		
-		next = dungeon_move_npc0(dungeon, npc);
+		next = move_npc0(dungeon, npc);
 		break;
 	}
 	
@@ -325,7 +326,7 @@ void rouge_gameover(Dungeon *dungeon, RunArgs run_args, uint64_t turn, uint8_t p
 	if (!pc_moved) { dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 0); }
 	
 	if (dungeon->pc.hp < 1) { printf("Game Over on turn [%ld] - PC died!\n", turn); }
-	else if (dungeon->num_npcs < 1) { printf("Game Over on turn [%ld] - PC defeated all monsters!\n", turn); }
+	else if (!dungeon_contains_npcs(dungeon)) { printf("Game Over on turn [%ld] - PC defeated all monsters!\n", turn); }
 	else { printf("Game Over on turn [%ld] - not sure why tho...\n", turn); }
 	
 	return;
