@@ -32,7 +32,7 @@ typedef struct Cell {
 	Coordinate location;
 	uint8_t hardness;
 	CellType type;
-	Character_Wrapper *character;
+	Character_Wrapper character;
 	
 	uint8_t visited;
 	int meta_data;
@@ -46,6 +46,10 @@ Cell cell_init(uint8_t y, uint8_t x, int hardness);
 int cell_immutable_ntunneling(Cell cell);
 
 int cell_immutable_tunneling(Cell cell);
+
+Character_PC* cell_contains_pc(Cell cell);
+
+Character_NPC* cell_contains_npc(Cell cell);
 
 void cell_print(Cell cell, int print_fill, int print_weight, int print_color);
 

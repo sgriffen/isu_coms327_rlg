@@ -44,11 +44,11 @@ void rouge_init(Dungeon *dungeon, char *argv[], RunArgs run_args);
 
 void rouge_run(Dungeon *dungeon, RunArgs run_args);
 
-void rouge_turn(Dungeon *dungeon, RunArgs run_args, Character_Wrapper *characters, Queue *movement_queue, uint64_t *turn, uint8_t *pc_moved);
+void rouge_turn(Dungeon *dungeon, RunArgs run_args, Character_Wrapper *characters, Queue *movement_queue, uint64_t *turn, uint64_t *queue_position, uint8_t *pc_moved);
 
-void rouge_move_pc(Dungeon *dungeon, Character_Wrapper *wrapper, float fps);
+void rouge_move_pc(Dungeon *dungeon, Character_Wrapper wrapper, float fps);
 
-void rouge_move_npc(Dungeon *dungeon, Character_Wrapper *wrapper);
+void rouge_move_npc(Dungeon *dungeon, Character_Wrapper wrapper);
 
 void rouge_gameover(Dungeon *dungeon, RunArgs run_args, uint64_t turn, uint8_t pc_moved);
 

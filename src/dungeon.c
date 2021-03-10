@@ -584,8 +584,8 @@ void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs) {
 	
 	for (i = 0; i < num_npcs; i++) {
 		
-//		uint8_t type = ((utils_rand_chance(50, NULL)) << 3) | ((utils_rand_chance(50, NULL)) << 2) | ((utils_rand_chance(50, NULL)) << 1) | ((utils_rand_chance(50, NULL)) << 0);
-		uint8_t type = 0; //define type for debugging
+		uint8_t type = ((utils_rand_chance(50, NULL)) << 3) | ((utils_rand_chance(50, NULL)) << 2) | ((utils_rand_chance(50, NULL)) << 1) | ((utils_rand_chance(50, NULL)) << 0);
+//		uint8_t type = 0; //define type for debugging
 //		printf("-- debug -- npc type:[%d]\n", type);
 		Coordinate loc;
 		
@@ -594,13 +594,15 @@ void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs) {
 			loc.y = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_height, NULL);
 			loc.x = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_width, NULL);
 			
-			while(coordinate_is_same(loc, dungeon->pc.location) && j < DUNGEON_MAX_CHANCE_COUNT) {
+			while((coordinate_is_same(loc, dungeon->pc.location) || cell_immutable_tunneling(dungeon->cells[loc.y][loc.x])) && j < DUNGEON_MAX_CHANCE_COUNT) {
 				
 				loc.y = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_height, NULL);
 				loc.x = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_width, NULL);
 				
 				j++;
 			}
+            if (j >= DUNGEON_MAX_CHANCE_COUNT) { unplaced_npcs++; }
+            j = 0;
 		} else {
 			
 			int room_index = utils_rand_between(0, dungeon->num_rooms-1, NULL);
@@ -608,16 +610,16 @@ void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs) {
 			loc.y = utils_rand_between(dungeon->rooms[room_index].tl.y, dungeon->rooms[room_index].br.y, NULL);
 			loc.x = utils_rand_between(dungeon->rooms[room_index].tl.x, dungeon->rooms[room_index].br.x, NULL);
 			
-			while(coordinate_is_same(loc, dungeon->pc.location) && j < DUNGEON_MAX_CHANCE_COUNT) {
+			while((coordinate_is_same(loc, dungeon->pc.location) || cell_immutable_ntunneling(dungeon->cells[loc.y][loc.x])) && j < DUNGEON_MAX_CHANCE_COUNT) {
 				
 				loc.y = utils_rand_between(dungeon->rooms[room_index].tl.y+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.y-ROOM_BORDER_WIDTH, NULL);
 				loc.x = utils_rand_between(dungeon->rooms[room_index].tl.x+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.x-ROOM_BORDER_WIDTH, NULL);
 				
 				j++;
 			}
+            if (j >= DUNGEON_MAX_CHANCE_COUNT) { unplaced_npcs++; }
+            j = 0;
 		}
-		if (j >= DUNGEON_MAX_CHANCE_COUNT) { unplaced_npcs++; }
-		j = 0;
 		
 		speed = utils_rand_between(NPC_SPEED_MIN, NPC_SPEED_MAX, NULL);
 		
@@ -626,55 +628,90 @@ void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs) {
 	}
 	
 	dungeon->num_npcs = num_npcs-unplaced_npcs;
+    dungeon->num_npcs_dead = 0;
 	
-	if (unplaced_npcs > 0) { printf("couldn't place [%d] npcs\n", unplaced_npcs); }
+	if (unplaced_npcs) { printf("couldn't place [%d] npcs\n", unplaced_npcs); }
 	
 	return;
 }
 
-int dungeon_coordinate_inbounds(Coordinate coord) {
-	
-	if (coord.y > 0 && coord.y < DUNGEON_HEIGHT && coord.x > 0 && coord.x < DUNGEON_WIDTH) { return 1; }
-	return 0;
-}
+int dungeon_coordinate_inbounds(Coordinate coord) { return (coord.y > 0 && coord.y < DUNGEON_HEIGHT && coord.x > 0 && coord.x < DUNGEON_WIDTH); }
 
 Coordinate dungeon_los(Dungeon dungeon, Coordinate start, Coordinate end) {
-	
+
 	/*
-		uses Bresenham's line algorithm to draw a line between the start cell and the end cell.
+	    uses Bresenham's line algorithm to draw a line between the start cell and the end cell.
 		if it comes across a cell that's immutable to non-tunneling npcs, it returns coordinate (0, 0)
 		otherwise it returns the end coordinate
-	*/
-	
-	Coordinate next = {
+	    also
+	    draw rays in all 8 directions until an ntunneling immutable cell is reached.
+	    if the end coordinate is found before then, return the end coordinate
+	    else, return (0, 0)
+	 */
+
+	Coordinate zero = {
 		
-		.y = start.y,
-		.x = start.x
+		.y = 0,
+		.x = 0
 	};
-	
-//	printf("-- debug -- los target cell y:[%d] x:[%d]\n", end.y, end.x);
-	
-	if (abs(end.y - start.y) < abs(end.x - start.x)) {
-		
-		if (start.x > end.x) 	{ next = dungeon_los_lowhi(dungeon, end, start); }
-		else 					{ next = dungeon_los_lowhi(dungeon, start, end); }
-	} else {
-		
-		if (start.y > end.y) 	{ next = dungeon_los_hilow(dungeon, end, start); }
-		else 					{ next = dungeon_los_hilow(dungeon, start, end); }
+
+	int matrix_u[2]     =  { -1,  0 };
+    int matrix_ul[2]    =  { -1,  1 };
+    int matrix_l[2]     =  {  0,  1 };
+    int matrix_dl[2]    =  {  1,  1 };
+    int matrix_d[2]     =  {  1,  0 };
+    int matrix_dr[2]    =  {  1, -1 };
+    int matrix_r[2]     =  {  0, -1 };
+    int matrix_ur[2]    =  { -1, -1 };
+
+	if (    dungeon_los_ray(dungeon, start, end, matrix_u)
+        ||  dungeon_los_ray(dungeon, start, end, matrix_ul)
+        ||  dungeon_los_ray(dungeon, start, end, matrix_l)
+        ||  dungeon_los_ray(dungeon, start, end, matrix_dl)
+        ||  dungeon_los_ray(dungeon, start, end, matrix_d)
+        ||  dungeon_los_ray(dungeon, start, end, matrix_dr)
+        ||  dungeon_los_ray(dungeon, start, end, matrix_r)
+        ||  dungeon_los_ray(dungeon, start, end, matrix_ur)
+        )
+	{ return end; }
+	else {
+
+        if (abs(end.y - start.y) < abs(end.x - start.x)) {
+
+            if (start.x > end.x) 	{ return dungeon_los_lowhi(dungeon, end, start) ? end : zero; }
+            return dungeon_los_lowhi(dungeon, start, end) ? end : zero;
+        } else {
+
+            if (start.y > end.y) 	{ return dungeon_los_hilow(dungeon, end, start) ? end : zero; }
+            return dungeon_los_hilow(dungeon, start, end) ? end : zero;
+        }
 	}
-	
-	return next;
 }
 
-Coordinate dungeon_los_lowhi(Dungeon dungeon, Coordinate start, Coordinate end) {
+int dungeon_los_ray(Dungeon dungeon, Coordinate start, Coordinate end, int const ray_matrix[2]) {
+
+    Coordinate current = {
+        .y = start.y,
+        .x = start.x
+    };
+
+    while (!cell_immutable_ntunneling(dungeon.cells[current.y][current.x]) && coordinate_is_same(current, end)) {
+
+        current.y += ray_matrix[0];
+        current.x += ray_matrix[1];
+    }
+
+    return coordinate_is_same(current, end);
+}
+
+int dungeon_los_lowhi(Dungeon dungeon, Coordinate start, Coordinate end) {
 	
 	int i = 0;
 	
 	Coordinate next = {
 		
-		.y = start.y,
-		.x = start.x
+		.y = 0,
+		.x = 0
 	};
 	
 	int delta_x = end.x - start.x;
@@ -694,13 +731,7 @@ Coordinate dungeon_los_lowhi(Dungeon dungeon, Coordinate start, Coordinate end) 
 	for (i = start.x; i < end.x; i++) {
 		
 		next.x = i;
-		if (cell_immutable_ntunneling(dungeon.cells[next.y][next.x])) {
-			
-			next.y = 0;
-			next.x = 0;
-			
-			return next;
-		}
+		if (cell_immutable_ntunneling(dungeon.cells[next.y][next.x])) { return 0; }
 		if (delta > 0) {
 			
 			next.y = next.y + inc_y;
@@ -710,17 +741,17 @@ Coordinate dungeon_los_lowhi(Dungeon dungeon, Coordinate start, Coordinate end) 
 //		printf("-- debug -- los pending cell y:[%d] x:[%d]\n", next.y, next.x);
 	}
 	
-	return next;
+	return 1;
 }
 
-Coordinate dungeon_los_hilow(Dungeon dungeon, Coordinate start, Coordinate end) {
+int dungeon_los_hilow(Dungeon dungeon, Coordinate start, Coordinate end) {
 	
 	int i = 0;
 	
 	Coordinate next = {
 		
-		.y = start.y,
-		.x = start.x
+		.y = 0,
+		.x = 0
 	};
 	
 	int delta_x = end.x - start.x;
@@ -740,13 +771,7 @@ Coordinate dungeon_los_hilow(Dungeon dungeon, Coordinate start, Coordinate end) 
 	for (i = start.y; i < end.y; i++) {
 		
 		next.y = i;
-		if (cell_immutable_ntunneling(dungeon.cells[next.y][next.x])) {
-			
-			next.y = 0;
-			next.x = 0;
-			
-			return next;
-		}
+		if (cell_immutable_ntunneling(dungeon.cells[next.y][next.x])) { return 0; }
 		if (delta > 0) {
 			
 			next.x = next.x + inc_x;
@@ -756,10 +781,10 @@ Coordinate dungeon_los_hilow(Dungeon dungeon, Coordinate start, Coordinate end) 
 //		printf("-- debug -- los pending cell y:[%d] x:[%d]\n", next.y, next.x);
 	}
 	
-	return next;
+	return 1;
 }
 
-void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper *character, Coordinate next) {
+void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper character, Coordinate next) {
 	
 	/*
 		Resolves potential collisions with the next cell a character wants to move to, and the current character that's in that cell
@@ -771,46 +796,46 @@ void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper *character, C
 	Character_PC* pc_location = NULL;
 	Character_NPC* npc_location = NULL;
 	
-	if (character->pc) {
+	if (character.pc) {
 		
 //		printf("-- debug -- resolving pc collision\n");
 		
-		npc_location = dungeon_cell_contains_npc(dungeon, next);
+		npc_location = cell_contains_npc(dungeon->cells[next.y][next.x]);
 		if (npc_location) {
 			
-			npc_location->hp -= character->pc->damage;
+			npc_location->hp -= character.pc->damage;
 //			printf("-- debug -- pc-npc collision detected\n");
 		}
 		
-		dungeon->cells[character->pc->location.y][character->pc->location.x].character = NULL;
-		dungeon->cells[next.y][next.x].character = character;
+		dungeon->cells[character.pc->location.y][character.pc->location.x].character.pc = NULL;
+		dungeon->cells[next.y][next.x].character.pc = character.pc;
 		
-		character->pc->prev_location = character->pc->location;
-		character->pc->location = next;
+		character.pc->prev_location = character.pc->location;
+		character.pc->location = next;
 	} else {
 		
 //		printf("-- debug -- resolving npc collision\n");
 		
-		pc_location = dungeon_cell_contains_pc(dungeon, next);
+		pc_location = cell_contains_pc(dungeon->cells[next.y][next.x]);
 		if (pc_location) 	{
 			
-			pc_location->hp -= character->npc->damage;
+			pc_location->hp -= character.npc->damage;
 //			printf("-- debug -- npc-pc collision detected\n");
 		}
 		
-		npc_location = dungeon_cell_contains_npc(dungeon, next);
-		if (npc_location && (npc_location->id != character->npc->id)) {
+		npc_location = cell_contains_npc(dungeon->cells[next.y][next.x]);
+		if (npc_location && (npc_location->id != character.npc->id)) {
 			
-			npc_location->hp -= character->npc->damage;
+			npc_location->hp -= character.npc->damage;
 			
 //			printf("-- debug -- npc-npc collision detected\n");
 		}
 		
-		dungeon->cells[character->npc->location.y][character->npc->location.x].character = NULL;
-		dungeon->cells[next.y][next.x].character = character;
+		dungeon->cells[character.npc->location.y][character.npc->location.x].character.npc = NULL;
+		dungeon->cells[next.y][next.x].character.npc = character.npc;
 		
-		character->npc->prev_location = character->npc->location;
-		character->npc->location = next;
+		character.npc->prev_location = character.npc->location;
+		character.npc->location = next;
 		
 //		printf("-- debug -- npc prev location y:[%d] x:[%d]\n", character.npc->prev_location.y, character.npc->prev_location.x);
 //		printf("-- debug -- npc current location y:[%d] x:[%d]\n", character.npc->location.y, character.npc->location.x);
@@ -819,34 +844,7 @@ void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper *character, C
 	return;
 }
 
-Character_PC* dungeon_cell_contains_pc(Dungeon *dungeon, Coordinate coord) {
-	
-	Character_Wrapper *c = dungeon->cells[coord.y][coord.x].character;
-	if (c && c->pc) { return c->pc; }
-	
-	return NULL;
-}
-
-Character_NPC* dungeon_cell_contains_npc(Dungeon *dungeon, Coordinate coord) {
-	
-	Character_Wrapper *c = dungeon->cells[coord.y][coord.x].character;
-	if (c && c->npc) { return c->npc; }
-	
-	return NULL;
-}
-
-int dungeon_contains_npcs(Dungeon *dungeon) {
-	
-	int i = 0;
-	int num_npcs_dead = 0;
-	
-	for (i = 0; i < dungeon->num_npcs; i++) {
-		
-		if (dungeon->npcs[i].hp < 1) { num_npcs_dead++; }
-	}
-	
-	return dungeon->num_npcs - num_npcs_dead;
-}
+int dungeon_contains_npcs(Dungeon *dungeon) { return dungeon->num_npcs - dungeon->num_npcs_dead; }
 
 void dungeon_print(Dungeon dungeon, int print_fill, int print_color, int print_weight) {
 	

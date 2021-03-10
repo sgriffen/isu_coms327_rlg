@@ -20,7 +20,7 @@ typedef struct QueueNode QueueNode;
 
 struct QueueNode {
 	
-	uint32_t priority;
+	uint64_t priority;
 	
 	void *element;
 	QueueNode *from;
@@ -37,7 +37,7 @@ typedef struct {
 /****** function declarations *****/
 Queue queue_init(uint16_t size);
 
-QueueNode queue_node_init(void *loc, uint32_t priority);
+QueueNode queue_node_init(void *loc, uint64_t priority);
 
 int queue_is_empty(Queue queue);
 

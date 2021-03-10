@@ -5,17 +5,15 @@
 #include "../character.h"
 #include "../coordinate.h"
 
-Coordinate move_towards_ntunneling(Dungeon *dungeon, Coordinate start, Coordinate end);
+Coordinate move_away(Dungeon *dungeon, Coordinate start, Coordinate end, int avoid_npc, int (*immutable)(Cell));
 
-Coordinate move_towards_tunneling(Dungeon *dungeon, Coordinate start, Coordinate end);
+Coordinate move_towards(Dungeon *dungeon, Coordinate start, Coordinate end, int avoid_npc, int (*immutable)(Cell));
 
-Coordinate move_min_ntunneling(Dungeon *dungeon, Coordinate location);
+Coordinate move_min_ntunneling(Dungeon *dungeon, Coordinate loc, int avoid_npc);
 
-Coordinate move_min_tunneling(Dungeon *dungeon, Coordinate location);
+Coordinate move_min_tunneling(Dungeon *dungeon, Coordinate loc, int avoid_npc);
 
-Coordinate move_rand_ntunneling(Dungeon *dungeon, Coordinate location);
-
-Coordinate move_rand_tunneling(Dungeon *dungeon, Coordinate location);
+Coordinate move_rand(Dungeon *dungeon, Coordinate location, int avoid_npc, int (*immutable)(Cell));
 
 Coordinate move_pc(Dungeon* dungeon, Character_PC *pc);
 

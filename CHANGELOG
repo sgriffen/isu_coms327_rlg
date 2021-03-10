@@ -1,7 +1,9 @@
+03/10/2021
+	- Completed work on npc movement and placement fixes
+
 03/09/2021
 	- Working on re-doing npc movement/placement because it didn't work like I wanted to for assignment 1.04
 		- Done with storage of character queue, and where npcs and pc are referenced in dungeon/cell struct
-		- Done with npc0 movement
 
 03/04/2021
 	- Turn in of final assignment 1.04 draft

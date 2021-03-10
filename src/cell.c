@@ -17,12 +17,16 @@ Cell cell_init(uint8_t y, uint8_t x, int hardness) {
 	else { cell_hardness = (uint8_t)hardness; }
 	
 	Coordinate location = coordinate_init(y, x);
-	
+	Character_Wrapper wrapper = {
+        .pc = NULL,
+        .npc = NULL
+	};
+
 	Cell cell = {
 		
 		.location = location,
 		.type = CellType_Wall,
-		.character = NULL,
+		.character = wrapper,
 		.hardness = cell_hardness,
 		.visited = 0,
 		.meta_data = -1,
@@ -37,27 +41,23 @@ int cell_immutable_ntunneling(Cell cell) { return cell.hardness > 0; }
 
 int cell_immutable_tunneling(Cell cell) { return cell.hardness >= CELL_HARDNESS_MAX; }
 
+Character_PC* cell_contains_pc(Cell cell) { return (cell.character.pc) ? cell.character.pc : NULL; }
+
+Character_NPC* cell_contains_npc(Cell cell) { return (cell.character.npc) ? cell.character.npc : NULL; }
+
 void cell_print(Cell cell, int print_fill, int print_weight, int print_color) {
 	
 	
 	if (print_weight == 1) {
 		
-		if (cell.character) {
-			
-			if (cell.character->pc && cell.character->pc->hp > 0) 			{ character_print_pc(*(cell.character->pc), 1, print_color); }
-			else if (cell.character->npc && cell.character->npc->hp > 0) 	{ character_print_npc(*(cell.character->npc), 1, print_color); }
-			else { printf("%s%s%s", "\x1b[97m", "~~", "\x1b[0m"); }
-		}
-		else { printf("%s%02x%s", "\x1b[97m", cell.hardness, "\x1b[0m"); } //print cell hardness in hex
+		if (cell.character.pc)          { character_print_pc(*(cell.character.pc), 1, print_color); }
+		else if (cell.character.npc)    { character_print_npc(*(cell.character.npc), 1, print_color); }
 	}
 	else {
-		
-		if (cell.character) {
-			
-			if (cell.character->pc && cell.character->pc->hp > 0) 			{ character_print_pc(*(cell.character->pc), 0, print_color); }
-			else if (cell.character->npc && cell.character->npc->hp > 0) 	{ character_print_npc(*(cell.character->npc), 0, print_color); }
-			else { printf("%s%c%s", "\x1b[97m", '~', "\x1b[0m"); }
-		} else {
+
+        if (cell.character.pc)          { character_print_pc(*(cell.character.pc), 0, print_color); }
+        else if (cell.character.npc)    { character_print_npc(*(cell.character.npc), 0, print_color); }
+		else {
 		
 			switch (cell.type) {
 			

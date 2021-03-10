@@ -26,7 +26,7 @@ Queue queue_init(uint16_t length) {
 	return queue;
 }
 
-QueueNode queue_node_init(void *element, uint32_t priority) {
+QueueNode queue_node_init(void *element, uint64_t priority) {
 	
 	QueueNode node = {
 		
@@ -41,8 +41,6 @@ QueueNode queue_node_init(void *element, uint32_t priority) {
 int queue_is_empty(Queue queue) { return !queue.index; }
 
 int queue_is_full(Queue queue) { return queue.index == queue.size; }
-
-QueueNode* queue_peek(Queue *queue) { return &(queue->nodes[(queue->index)-1]); }
 
 QueueNode* queue_append(Queue *queue, QueueNode node) {
 	
@@ -73,6 +71,8 @@ QueueNode* queue_enqueue(Queue *queue, QueueNode node) {
 	queue->index++;
 	return &(queue->nodes[i+1]);
 }
+
+QueueNode* queue_peek(Queue *queue) { return &(queue->nodes[(queue->index)-1]); }
 
 QueueNode queue_dequeue(Queue *queue) {
 	
@@ -150,7 +150,7 @@ void queue_print(Queue queue) {
 	
 	printf("queue -- index: [%d]\n", queue.index);
 	
-	for (i = queue.index-1; i >= 0; i--) { printf("queue -- position: [%3d]   priority: [%d]\n", i, queue.nodes[i].priority); }
+	for (i = queue.index-1; i >= 0; i--) { printf("queue -- position: [%3d]   priority: [%lu]\n", i, queue.nodes[i].priority); }
 	
 	return;
 }

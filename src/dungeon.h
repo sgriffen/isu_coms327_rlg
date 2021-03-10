@@ -19,9 +19,7 @@
 #define DUNGEON_MAX_STAIRCASE_UP 2
 #define DUNGEON_MIN_STAIRCASE_DOWN 1
 #define DUNGEON_MAX_STAIRCASE_DOWN 2
-#define DUNGEON_MAX_NPCS 0
 #define DUNGEON_MAX_CHANCE_COUNT 5000
-#define DUNGEON_MIN_CHANCE_COUNT 50
 
 /************* macros *************/
 
@@ -54,6 +52,7 @@ typedef struct {
 
 	uint32_t npc_id_next;
 	uint16_t num_npcs;
+	uint16_t num_npcs_dead;
 	Character_NPC *npcs;
 } Dungeon;
 
@@ -86,15 +85,13 @@ int dungeon_coordinate_inbounds(Coordinate location);
 
 Coordinate dungeon_los(Dungeon dungeon, Coordinate start, Coordinate end);
 
-Coordinate dungeon_los_lowhi(Dungeon dungeon, Coordinate start, Coordinate end);
+int dungeon_los_ray(Dungeon dungeon, Coordinate start, Coordinate end, int const ray_matrix[2]);
 
-Coordinate dungeon_los_hilow(Dungeon dungeon, Coordinate start, Coordinate end);
+int dungeon_los_lowhi(Dungeon dungeon, Coordinate start, Coordinate end);
 
-void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper *character, Coordinate next);
+int dungeon_los_hilow(Dungeon dungeon, Coordinate start, Coordinate end);
 
-Character_PC* dungeon_cell_contains_pc(Dungeon *dungeon, Coordinate coord);
-
-Character_NPC* dungeon_cell_contains_npc(Dungeon *dungeon, Coordinate coord);
+void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper character, Coordinate next);
 
 int dungeon_contains_npcs(Dungeon *dungeon);
 

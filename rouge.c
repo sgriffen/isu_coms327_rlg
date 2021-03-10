@@ -127,6 +127,7 @@ void rouge_run(Dungeon *dungeon, RunArgs run_args) {
 	int i = 0;
 	
 	uint64_t turn = 0;
+	uint64_t queue_position = 0;
 	uint8_t pc_moved = 0;
 	
 	/* wrap pc and npc inside Character wrappers for queue */
@@ -146,9 +147,18 @@ void rouge_run(Dungeon *dungeon, RunArgs run_args) {
 		};
         characters[i+1] = wrapper_npc;
 	}
-	
-	/* organize pc and npcs into priority queue based on movement speed */
-	Queue movement_queue = queue_init((dungeon->num_npcs)+1);
+
+    /* organize pc and npcs into priority queue based on movement speed */
+    Queue movement_queue = queue_init((dungeon->num_npcs)+1);
+    for (i = 0; i < dungeon->num_npcs; i++) {
+
+        queue_enqueue(&movement_queue, queue_node_init(&(characters[i+1]), CHARACTER_TURN(characters[i+1].npc->speed)));
+        dungeon->cells[characters[i+1].npc->location.y][characters[i+1].npc->location.x].character.npc = characters[i+1].npc;
+    }
+    queue_enqueue(&movement_queue, queue_node_init(&(characters[0]), CHARACTER_TURN(characters[0].pc->speed)));
+    dungeon->cells[characters[0].pc->location.y][characters[0].pc->location.x].character.pc = characters[0].pc;
+
+    queue_position = movement_queue.nodes[0].priority + 1;
 	
 	while (dungeon->pc.hp > 0 && dungeon_contains_npcs(dungeon)) {
 	
@@ -157,7 +167,7 @@ void rouge_run(Dungeon *dungeon, RunArgs run_args) {
 		pathfinder_tunneling(dungeon, &(dungeon->pc.location)); //generate tunneling paths to player
 		
 		/* move npc and npc */
-		rouge_turn(dungeon, run_args, characters, &movement_queue, &turn, &pc_moved);
+		rouge_turn(dungeon, run_args, characters, &movement_queue, &turn, &queue_position, &pc_moved);
 		
 		/* print created/loaded dungeon with desired print flags */
 		if (run_args.print_weight_ntunneling) 	{ dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 2); }	//print non-tunneling weights
@@ -172,50 +182,50 @@ void rouge_run(Dungeon *dungeon, RunArgs run_args) {
 	return;
 }
 
-void rouge_turn(Dungeon *dungeon, RunArgs run_args, Character_Wrapper *characters, Queue *movement_queue, uint64_t *turn, uint8_t *pc_moved) {
+void rouge_turn(Dungeon *dungeon, RunArgs run_args, Character_Wrapper *characters, Queue *movement_queue, uint64_t *turn, uint64_t *queue_position, uint8_t *pc_moved) {
 
 	int i = 0;
 	*pc_moved = 0;
 
-    for (i = 0; i < dungeon->num_npcs; i++) {
-
-        queue_enqueue(movement_queue, queue_node_init(&(characters[i+1]), CHARACTER_TURN(characters[i+1].npc->speed)));
-        dungeon->cells[characters[i+1].npc->location.y][characters[i+1].npc->location.x].character = &(characters[i+1]);
-    }
-    queue_enqueue(movement_queue, queue_node_init(&(characters[0]), CHARACTER_TURN(characters[0].pc->speed)));
-    dungeon->cells[characters[0].pc->location.y][characters[0].pc->location.x].character = &(characters[0]);
-
 	if (!(*turn)) { dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 0); }
-	
+
 	/* dequeue nodes, stopping at pc node */
-	while (!queue_is_empty(*movement_queue)) {
+	while ((i < ((movement_queue->index) + 1)) && !queue_is_empty(*movement_queue)) {
 		
 		QueueNode node = queue_dequeue(movement_queue);
+        node.priority = *queue_position;
 		Character_Wrapper *wrapper = (Character_Wrapper*)(node.element);
 		
 		if (wrapper->pc) {
 			
 			/* print dungeon with updated npc positions */
-			dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 0);
+			if (*turn) { dungeon_print(*dungeon, run_args.print_type, run_args.print_color, 0); }
 			
 			/* move pc */
 			if (wrapper->pc->hp > 0) {
 				
-				rouge_move_pc(dungeon, wrapper, run_args.fps);
+				rouge_move_pc(dungeon, *wrapper, run_args.fps);
+				queue_enqueue(movement_queue, node);
 				*pc_moved = 1;
 			}
 		} else {
 			
-			if (wrapper->npc->hp > 0) { rouge_move_npc(dungeon, wrapper); }
+			if (wrapper->npc->hp > 0) {
+
+			    rouge_move_npc(dungeon, *wrapper);
+                queue_enqueue(movement_queue, node);
+			} else { (dungeon->num_npcs_dead)++; }
 		}
 		
 		(*turn)++;
+        (*queue_position)++;
+		i++;
 	}
 }
 
-void rouge_move_pc(Dungeon *dungeon, Character_Wrapper *wrapper, float fps) {
+void rouge_move_pc(Dungeon *dungeon, Character_Wrapper wrapper, float fps) {
 	
-	Character_PC *pc = wrapper->pc;
+	Character_PC *pc = wrapper.pc;
 	Coordinate next;
 	
 	next = move_pc(dungeon, pc);
@@ -235,9 +245,9 @@ void rouge_move_pc(Dungeon *dungeon, Character_Wrapper *wrapper, float fps) {
 	}
 }
 
-void rouge_move_npc(Dungeon *dungeon, Character_Wrapper *wrapper) {
+void rouge_move_npc(Dungeon *dungeon, Character_Wrapper wrapper) {
 	
-	Character_NPC *npc = wrapper->npc;
+	Character_NPC *npc = wrapper.npc;
 	Coordinate next = {
 		
 		.x = 0,
