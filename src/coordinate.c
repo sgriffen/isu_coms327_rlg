@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 /****** include custom libs ******/
-#include "coordinate.h"
+#include "./coordinate.h"
 
 
 /****** function definitions ******/

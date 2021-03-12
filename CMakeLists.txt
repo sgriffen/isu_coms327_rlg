@@ -3,6 +3,8 @@ project(hw_01 C)
 
 set(CMAKE_C_STANDARD 11)
 
+set(CMAKE_CXX_FLAGS "-lncurses")
+
 include_directories(.)
 include_directories(src)
 include_directories(src/utils)

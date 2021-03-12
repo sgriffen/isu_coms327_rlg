@@ -1,11 +1,13 @@
 Sean Griffen (griffens)
 
 
-This is my solution to homework 1.04, Player Character and Monsters.
-It generates a "level" or "floor" that will eventually be one of many in a full Dungeon, complete with a random number of rooms with a random size (within the given constraints), cooridors connecting the rooms, a small amount of up and down staircases, and a random number of monsters (NPCs) with random types and a player (PC).
-Right now, the "randomness" of the level is seeded by time(), so the generated level is only going to be different every second.
-Cooridors are drawn by finding the first room not in the connected set of rooms, and finding the closest room to it not in said set of connected rooms. The cooridor is then drawn to connect the two rooms, following the most direct path. Repeat this until all rooms are connected
-
+This is my solution to homework 1.05, User Interface with Ncurses.
+It generates a random number of dungeons that are persistent as the pc moves up and down staircases. 
+Individual dungeons in the whole "game state" are the same as previous assignments, save the first and last dungeon. In the first dungeon generated, there are only down staircases, because there are no dungeons above this level. Similarly for the last dungeon, there are no up staircases because it is the lowest level for the game.
+For a player to win, they must traverse all levels in the game and kill all monsters (nearly impossible, rip).
+The number of dungeons and npcs in those dungeons can be specified using the command arguments below,
+See files "state.c", and "state.h" for this implentation. The majority of the game code happens in these files.
+The print routines are located where what's being printed, i.e, the dungeon_draw in "dungeon.c" method get's called when drawing the dungeon to the screen after the PCs turn, which calls cell_draw in "cell.c" to draw a specific cell, which calls "character_draw" in "character.c" to draw a specific character when that cell contains a character. All these functions have been updated to utilize the ncurses, instead of using printf statements
 
 Things to note:
 	- A cell denoted as a Rock is printed as ' '
@@ -15,9 +17,11 @@ Things to note:
 	- A cell denoted as a down staircase is printed as '>'
 	- A cell containing the PC is printed as '@' with the color 'green' if the color option is selected
 	- A cell containing an npc is printed as the type of that npc with the color 'red' if the color option is selected
-	- The PC continually moves to cell (1, 1)
-	- Depending on the number of npcs defined, the game turn can take a while to progress
-	- If a given NPC's next move is going to move it out-of-bounds, or into a cell it cannot move into, it does not move. I was getting seg-faults for monsters moving where they shouldn't be, or just teleporting to an out-of-bounds cell and I hope to fix this for future assignments
+	- The PC is controlled using the given assignement constraints
+		- If, when moving diagonally, the pc can't move in both directions, it will move in the direction it can
+	- Depending on the number of npcs defined, it can take a while for the next pc turn to take place
+	- By far, the slowest part of each turn cycle is generating the shortest paths (non-tunneling and tunneling) to the pc after it moves. I'm not sure how best to make this faster using my priority queue implemtaiton in queue.c, queue.h, and path alrorithms in pathfinder.c, so any suggestions would be helpful.
+		- So far, I've been relatively successful in using my own code without looking at the professors, so I'd like to solve this issue using what I have.
 
 NPC type descriptions:
 	- Type 0:
@@ -129,23 +133,25 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 		- notes: Arguments <nt> and <t> are automatically printed for assignment 1.03, maps are printed in the order <base> <nt> <t> <h> <c>
 		- default behavior: No additional cell information is printed after dungeon generation. Only the base dungeon is printed
 		- example command: --p-c h nt c
-	- Number of monsters to generated
+	- Number of npcs to generate per level
 		- flag: nummon | nm
 		- arguments: <uint>
 		- description: 
 			- Generates <uint> number of npcs in the dungeon
-		- notes: <uint> should be non-negative. If <uint> is more than the max amount of cells in the dungeon, <uint> is truncated to the max cells
+		- notes: 
+			- <uint> should be non-negative. If <uint> is more than the max amount of playable cells in the dungeon, <uint> is truncated to the max number of playable cells
+			- If nummon is defined, all generated "dungeons" during a single "game" have the same <uint> number of npcs
 		- default behavior: A random number of npcs between <num_rooms> and <num_rooms * 2> are generated
 		- example command: --nm 20
-	- FPS to run the game at:
-		- flag: fps
-		- arguments <float>
-		- description: 
-			- Runs the game at <float> frames-per-second
-			- If a negative fps is defined, game progresses by the user hitting "enter"
-		- notes: Depending on the number of npcs generated, turns can take longer than <float> to complete
-		- default behavior: Game runs at 1 fps
-		- example command: --fps 0.5
+	- Number of dungeon to generate per game
+		- flag: numdun | nd
+		- arguments: <uint>
+		- description:
+			- Generates <uint> number of dungeons per game
+		- notes: <uint> should be non-negative
+		- default behavior: A random number of dungeons between 2 and 10 are generated
+		- example command: --nd 12
+	
 
 A command to run this application with all arguments defined may look as follows:
-	./rouge.o [<--print | --p> <b | f>] [<--load | --l> <filepath>] [<--save | --s> <filepath>] [--color] [<--print-cell | --pc> <h nt t c>] [<--nummmon | --nm> <uint>] [<--fps> <float>]
+	./rouge.o [<--print | --p> <b | f>] [<--load | --l> <filepath>] [<--save | --s> <filepath>] [--color] [<--print-cell | --pc> <h nt t c>] [<--nummmon | --nm> <uint>] [<--numdun | --nd> <uint>]

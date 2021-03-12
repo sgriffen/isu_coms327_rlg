@@ -1,4 +1,12 @@
+03/11/2021
+	- Turn in of final assignment 1.05 draft
+	- Updating README with explination of curses and dungeon traversing implementation
+	- Finished GameState structure, and can traverse multiple dungeons that have persisting data
+	- Transitioned to using ncurses for printing to console
+
 03/10/2021
+	- Created GameState in state.c and state.h to keep track of dungeons created, so levels and number of npcs in levels can persist if pc moves up and down stairs
+	- Started to implement curses
 	- Completed work on npc movement and placement fixes
 
 03/09/2021
@@ -10,7 +18,7 @@
 	- Updating README with npc descriptions and new command args
 	- Finilizing npc movement edge-cases
 
-03/02/2021
+03/03/2021
 	- Adding movement for all npcs
 
 03/02/2021

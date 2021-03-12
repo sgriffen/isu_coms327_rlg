@@ -5,6 +5,7 @@
 
 #include "./coordinate.h"
 #include "./character.h"
+#include "./utils/config.h"
 
 /********** definitions ***********/
 #define CELL_HARDNESS_MIN 0
@@ -51,6 +52,6 @@ Character_PC* cell_contains_pc(Cell cell);
 
 Character_NPC* cell_contains_npc(Cell cell);
 
-void cell_print(Cell cell, int print_fill, int print_weight, int print_color);
+void cell_draw(Cell cell, uint8_t y, uint8_t x, int print_fill, int print_weight, int print_color);
 
 #endif /* CELL_H */

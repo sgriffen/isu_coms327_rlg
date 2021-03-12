@@ -47,9 +47,8 @@ typedef struct {
 	
 	uint16_t num_staircases_down;
 	Cell **staircases_down;
-
-	Character_PC pc;
-
+	
+	uint8_t num_npcs_defined;
 	uint32_t npc_id_next;
 	uint16_t num_npcs;
 	uint16_t num_npcs_dead;
@@ -57,7 +56,7 @@ typedef struct {
 } Dungeon;
 
 /****** function declarations *****/
-void dungeon_init(Dungeon *dungeon, uint8_t dungeon_height, uint8_t dungeon_width, int num_npcs);
+Dungeon dungeon_init(uint8_t dungeon_height, uint8_t dungeon_width, int num_npcs, int num_stairs_up, int num_stairs_down, int ommit_stairs);
 
 void dungeon_finit(Dungeon *dungeon, uint8_t f_pc_y, uint8_t f_pc_x, uint8_t *f_cells, uint16_t f_num_rooms, uint8_t *f_rooms, uint16_t f_num_stairs_up, uint8_t *f_stairs_up, uint16_t f_num_stairs_down, uint8_t *f_stairs_down);
 
@@ -75,9 +74,7 @@ void dungeon_generate_cooridor(Dungeon *dungeon, Coordinate start, Coordinate en
 
 int dungeon_draw_cooridor(Dungeon *dungeon, QueueNode *nodes, Coordinate *start);
 
-void dungeon_generate_staircases(Dungeon *dungeon);
-
-void dungeon_generate_pc(Dungeon *dungeon);
+void dungeon_generate_staircases(Dungeon *dungeon, int num_staircase_up, int num_staircase_down, int ommit_stairs);
 
 void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs);
 
@@ -95,7 +92,7 @@ void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper character, Co
 
 int dungeon_contains_npcs(Dungeon *dungeon);
 
-void dungeon_print(Dungeon dungeon, int print_fill, int print_color, int print_weight);
+void dungeon_draw(Dungeon dungeon, uint8_t offset_y, uint8_t offset_x, int print_fill, int print_color, int print_weight);
 
 
 #endif /* DUNGEON_H */

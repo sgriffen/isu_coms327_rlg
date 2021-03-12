@@ -61,4 +61,5 @@ void queue_node_swap(QueueNode *beta, QueueNode *alpha);
 
 void queue_print(Queue queue);
 
+
 #endif /* QUEUE_H */

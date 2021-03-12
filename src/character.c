@@ -1,7 +1,7 @@
 /******** include std libs ********/
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
+#include <ncurses.h>
 /******* include custom libs ******/
 #include "./character.h"
 #include "./utils/movement.h"
@@ -18,7 +18,8 @@ Character_PC character_init_pc(Coordinate loc, uint16_t hp, uint16_t damage, uin
 		.prev_location = loc,
 		.hp = hp,
 		.damage = damage,
-		.speed = speed
+		.speed = speed,
+		.num_kills = 0
 	};
 	
 	return pc;
@@ -44,20 +45,34 @@ Character_NPC character_init_npc(uint32_t id, Coordinate loc, uint8_t type, uint
 	return npc;
 }
 
-void character_print_pc(Character_PC pc, int print_fill, int print_color) {
+void character_print_pc(Character_PC pc, uint8_t y, uint8_t x, int print_fill, int print_color) {
 	
-	char *color = "\x1b[97m";
+	start_color();
+	init_pair(1, COLOR_GREEN, COLOR_BLACK);
 	
-	if (print_color) 	{ color = "\x1b[92m"; }
-	if (print_fill) 	{ printf("%s%2s%s", color, "@", "\x1b[0m"); } 	//color, str, reset-color
-	else 				{ printf("%s%c%s", color, '@', "\x1b[0m"); } 	//color, char, reset-color
+	if (print_color) { attron(COLOR_PAIR(1)); }
+	if (print_fill) {
+		
+		if (pc.hp > 0) 	{ mvprintw(y, x, "%2s", "@"); }
+		else 			{ mvprintw(y, x, "%2s", "X"); }
+	} else {
+		
+		if (pc.hp > 0) 	{ mvaddch(y, x, '@'); }
+		else 			{ mvaddch(y, x, 'X'); }
+	}
+	
+	
+	attroff(COLOR_PAIR(1));
 }
 
-void character_print_npc(Character_NPC npc, int print_fill, int print_color) {
+void character_print_npc(Character_NPC npc, uint8_t y, uint8_t x, int print_fill, int print_color) {
 	
-	char *color = "\x1b[97m";
+	start_color();
+	init_pair(2, COLOR_RED, COLOR_BLACK);
 	
-	if (print_color) 	{ color = "\x1b[31m"; }
-	if (print_fill) 	{ printf("%s%2x%s", color, npc.type, "\x1b[0m"); } 	//color, str, reset-color
-	else 				{ printf("%s%x%s", color, npc.type, "\x1b[0m"); } 	//color, char, reset-color
+	if (print_color) 	{ attron(COLOR_PAIR(2)); }
+	if (print_fill) 	{ mvprintw(y, x, "%2x", npc.type); }
+	else 				{ mvprintw(y, x, "%x", npc.type); }
+	
+	attroff(COLOR_PAIR(1));
 }

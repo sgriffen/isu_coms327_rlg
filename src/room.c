@@ -1,12 +1,11 @@
 /******** include std libs ********/
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
 /******* include custom libs ******/
-#include "room.h"
-#include "utils/math_utils.h"
+#include "./room.h"
+#include "./utils/math_utils.h"
 
 /*********** global vars **********/
 

@@ -29,6 +29,7 @@ typedef struct {
 	uint16_t hp;
 	uint8_t speed;
 	uint16_t damage;
+	uint32_t num_kills;
 } Character_PC;
 
 typedef struct {
@@ -57,8 +58,9 @@ Character_PC character_init_pc(Coordinate loc, uint16_t hp, uint16_t damage, uin
 
 Character_NPC character_init_npc(uint32_t id, Coordinate loc, uint8_t type, uint16_t hp, uint16_t damage, uint8_t speed);
 
-void character_print_pc(Character_PC pc, int print_fill, int print_color);
+void character_print_pc(Character_PC pc, uint8_t y, uint8_t x, int print_fill, int print_color);
 
-void character_print_npc(Character_NPC npc, int print_fill, int print_color);
+void character_print_npc(Character_NPC npc, uint8_t y, uint8_t x, int print_fill, int print_color);
+
 
 #endif /* CHARACTER_H */

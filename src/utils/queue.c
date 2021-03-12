@@ -1,13 +1,11 @@
 /******** include std libs ********/
 #include <stdlib.h>
-#include <stdio.h>
 #include <stdint.h>
 
 /******* include custom libs ******/
-#include "queue.h"
+#include "./queue.h"
 
 /********** definitions **********/
-
 
 
 /*********** global vars **********/
@@ -142,15 +140,4 @@ void queue_node_swap(QueueNode *beta, QueueNode *alpha) {
 	QueueNode temp = *alpha;
 	*alpha = *beta;
 	*beta = temp;
-}
-
-void queue_print(Queue queue) {
-	
-	int i = 0;
-	
-	printf("queue -- index: [%d]\n", queue.index);
-	
-	for (i = queue.index-1; i >= 0; i--) { printf("queue -- position: [%3d]   priority: [%lu]\n", i, queue.nodes[i].priority); }
-	
-	return;
 }

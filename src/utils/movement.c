@@ -1,6 +1,5 @@
 /******** include std libs ********/
 #include <stdlib.h>
-#include <stdio.h>
 /******* include custom libs ******/
 #include "./movement.h"
 #include "./math_utils.h"
@@ -256,16 +255,25 @@ Coordinate move_rand(Dungeon *dungeon, Coordinate loc, int avoid_npc, int (*immu
 	return next;
 }
 
-Coordinate move_pc(Dungeon *dungeon, Character_PC *pc) {
+Coordinate move_pc(Dungeon *dungeon, Character_PC *pc, int direction[2]) {
 	
 	Coordinate next = {
 		
-		.y = pc->location.y,
-		.x = pc->location.x
+		.y = pc->location.y + direction[0],
+		.x = pc->location.x + direction[1]
 	};
 	
-	if (pc->location.y > DUNGEON_BORDER_WIDTH) { next.y = (pc->location.y)-1; }
-	if (pc->location.x > DUNGEON_BORDER_WIDTH) { next.x = (pc->location.x)-1; }
+	if (dungeon_coordinate_inbounds(next) && !cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) { return next; }
+	if (direction[0] && direction[1]) {
+		
+		next.y = pc->location.y;
+		next.x = pc->location.x + direction[1];
+		if (dungeon_coordinate_inbounds(next) && !cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) { return next; }
+		next.y = pc->location.y + direction[0];
+		next.x = pc->location.x;
+	}
+	next.y = 0;
+	next.x = 0;
 	
 	return next;
 }
@@ -281,7 +289,7 @@ Coordinate move_npc0(Dungeon *dungeon, Character_NPC *npc) {
 	return move_away(dungeon, npc->location, npc->prev_location, 0, cell_immutable_ntunneling);
 }
 
-Coordinate move_npc1(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npc1(Dungeon *dungeon, Character_NPC *npc, Coordinate reference) {
 	
 	/*
 		npc is intelligent, non-telepathic, non-tunneling, and predictable
@@ -290,15 +298,12 @@ Coordinate move_npc1(Dungeon *dungeon, Character_NPC *npc) {
 		after it reaches said location without seeing the player, it goes back to wandering
 		it also intentionally avoids cells other npcs occupy as to not kill them
 	*/
-	
-//	printf("-- debug -- npc_1 last known player location y:[%d] x:[%d]\n", npc->last_known.y, npc->last_known.x);
 
     /* get known coordinate of player if los established */
-	Coordinate known = dungeon_los(*dungeon, npc->location, dungeon->pc.location);
-//	printf("-- debug -- npc_1 known player location y:[%d] x:[%d]\n", known.y, known.x);
+	Coordinate known = dungeon_los(*dungeon, npc->location, reference);
 	if (!cell_immutable_tunneling(dungeon->cells[known.y][known.x])) {
 
-		npc->last_known = dungeon->pc.location;
+		npc->last_known = reference;
         return move_min_ntunneling(dungeon, npc->location, 1);
 	}
     else if (coordinate_is_same(npc->last_known, npc->location)) {
@@ -319,16 +324,12 @@ Coordinate move_npc2(Dungeon *dungeon, Character_NPC *npc) {
 	*/
 	
 	Coordinate next = move_min_ntunneling(dungeon, npc->location, 0);
-	
-//	printf("-- debug -- npc_2 wants to move to y:[%d] x:[%d]\n", next.y, next.x);
-	
 	if (utils_rand_chance(45, NULL)) {
 		
 		if (utils_rand_chance(50, NULL) && !cell_immutable_ntunneling(dungeon->cells[npc->location.y][next.x])) { next.y = npc->location.y; }
 		else if (!cell_immutable_ntunneling(dungeon->cells[next.y][npc->location.x]))							            { next.x = npc->location.x; }
 	}
-
-//	printf("-- debug -- npc_2 moving to y:[%d] x:[%d]\n", next.y, next.x);
+	
 	return next;
 }
 Coordinate move_npc3(Dungeon *dungeon, Character_NPC *npc) {
@@ -353,7 +354,7 @@ Coordinate move_npc4(Dungeon *dungeon, Character_NPC *npc) {
 	return move_away(dungeon, npc->location, npc->prev_location, 0, cell_immutable_tunneling);
 }
 
-Coordinate move_npc5(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npc5(Dungeon *dungeon, Character_NPC *npc, Coordinate reference) {
 	
 	/* 
 		npc is intelligent, non-telepathic, tunneling, and predictable
@@ -363,14 +364,11 @@ Coordinate move_npc5(Dungeon *dungeon, Character_NPC *npc) {
 		it also intentionally avoids cells other npcs occupy as to not kill them
 	*/
 
-//	printf("-- debug -- npc_5 last known player location y:[%d] x:[%d]\n", npc->last_known.y, npc->last_known.x);
-
     /* get known coordinate of player if los established */
-    Coordinate known = dungeon_los(*dungeon, npc->location, dungeon->pc.location);
-//	printf("-- debug -- npc_1 known player location y:[%d] x:[%d]\n", known.y, known.x);
+    Coordinate known = dungeon_los(*dungeon, npc->location, reference);
     if (!cell_immutable_tunneling(dungeon->cells[known.y][known.x])) {
 
-        npc->last_known = dungeon->pc.location;
+        npc->last_known = reference;
         return move_min_tunneling(dungeon, npc->location, 1);
     }
     else if (coordinate_is_same(npc->last_known, npc->location)) {
@@ -392,16 +390,12 @@ Coordinate move_npc6(Dungeon *dungeon, Character_NPC *npc) {
 	*/
 	
 	Coordinate next = move_min_tunneling(dungeon, npc->location, 0);
-	
-//	printf("-- debug -- npc_6 wants to move to y:[%d] x:[%d]\n", next.y, next.x);
-
     if (utils_rand_chance(45, NULL)) {
 
         if (utils_rand_chance(50, NULL) && !cell_immutable_tunneling(dungeon->cells[npc->location.y][next.x]))  { next.y = npc->location.y; }
         else if (!cell_immutable_tunneling(dungeon->cells[next.y][npc->location.x]))							            { next.x = npc->location.x; }
     }
 
-//	printf("-- debug -- npc_6 moving to y:[%d] x:[%d]\n", next.y, next.x);
 	return next;
 }
 
@@ -414,8 +408,6 @@ Coordinate move_npc7(Dungeon *dungeon, Character_NPC *npc) {
 	*/
 
     Coordinate next = move_min_tunneling(dungeon, npc->location, 1);
-
-//	printf("-- debug -- npc_7 moving to y:[%d] x:[%d]\n", next.y, next.x);
     return next;
 }
 
@@ -430,14 +422,14 @@ Coordinate move_npc8(Dungeon *dungeon, Character_NPC *npc) {
 	return move_rand(dungeon, npc->location, 0, cell_immutable_ntunneling);
 }
 
-Coordinate move_npc9(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npc9(Dungeon *dungeon, Character_NPC *npc, Coordinate reference) {
 	
 	/* 
 		npc is intelligent, non-telepathic, non-tunneling, and eradic
 		it has a 50% chance of being a type_1 npc, or randomly moving to a room/cooridor cell next to it
 	*/
 	
-//	if (utils_rand_chance(50, NULL)) { return move_npc1(dungeon, npc); }
+	if (utils_rand_chance(50, NULL)) { return move_npc1(dungeon, npc, reference); }
 	return move_rand(dungeon, npc->location, 1, cell_immutable_ntunneling);
 }
 
@@ -474,14 +466,14 @@ Coordinate move_npcC(Dungeon *dungeon, Character_NPC *npc) {
 	return move_rand(dungeon, npc->location, 0, cell_immutable_tunneling);
 }
 
-Coordinate move_npcD(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npcD(Dungeon *dungeon, Character_NPC *npc, Coordinate reference) {
 	
 	/* 
 		npc is intelligent, non-telepathic, tunneling, and eradic
 		it has a 50% chance of being a type_5 npc, or randomly moving to any cell (besides immutable ones)
 	*/
 	
-	if (utils_rand_chance(50, NULL)) { return move_npc5(dungeon, npc); }
+	if (utils_rand_chance(50, NULL)) { return move_npc5(dungeon, npc, reference); }
 	return move_rand(dungeon, npc->location, 1, cell_immutable_tunneling);
 }
 
