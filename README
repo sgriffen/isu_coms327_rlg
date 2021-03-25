@@ -18,6 +18,7 @@ Things to note:
 	- A cell containing an npc is printed as the type of that npc with the color 'red' if the color option is selected
 	- Accessing 'warp' mode and the FOW toggle are mapped to the defiend controlls on the keyboard
 	- The warp point when in that mode is denoted as a blue '*'
+		- Warp starting point is where PC is
 	- FOW does not save previously seen character positions (yet) 
 	- The PC is controlled using the given previous assignement constraints
 		- If, when moving diagonally, the pc can't move in both directions, it will move in the direction it can
