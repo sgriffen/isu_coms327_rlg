@@ -13,11 +13,9 @@
 /****** function definitions ******/
 Coordinate move_away(Dungeon *dungeon, Coordinate start, Coordinate end, int avoid_npc, int (*immutable)(Cell)) {
 
-    Coordinate next = {
-
-        .y = 0,
-        .x = 0
-    };
+	Coordinate next;
+	next.y = 0;
+	next.x = 0;
 
     if (start.y < end.y) 		{ next.y = start.y - 1; }
     else if (start.y > end.y) 	{ next.y = start.y + 1; }
@@ -34,11 +32,9 @@ Coordinate move_away(Dungeon *dungeon, Coordinate start, Coordinate end, int avo
 
 Coordinate move_towards(Dungeon *dungeon, Coordinate start, Coordinate end, int avoid_npc, int (*immutable)(Cell)) {
 	
-	Coordinate next = {
-		
-		.y = 0,
-		.x = 0
-	};
+	Coordinate next;
+	next.y = 0;
+	next.x = 0;
 	
 	if (start.y < end.y) 		{ next.y = start.y + 1; }
 	else if (start.y > end.y) 	{ next.y = start.y - 1; }
@@ -55,11 +51,9 @@ Coordinate move_towards(Dungeon *dungeon, Coordinate start, Coordinate end, int 
 
 Coordinate move_min_ntunneling(Dungeon *dungeon, Coordinate loc, int avoid_npc) {
 	
-	Coordinate next = {
-		
-		.y = 0,
-		.x = 0
-	};
+	Coordinate next;
+	next.y = 0;
+	next.x = 0;
 	
 	uint32_t curr_weight = dungeon->cells[loc.y][loc.x].weight_ntunneling;
 	
@@ -111,11 +105,9 @@ Coordinate move_min_ntunneling(Dungeon *dungeon, Coordinate loc, int avoid_npc) 
 
 Coordinate move_min_tunneling(Dungeon *dungeon, Coordinate loc, int avoid_npc) {
 	
-	Coordinate next = {
-		
-		.y = 0,
-		.x = 0
-	};
+	Coordinate next;
+	next.y = 0;
+	next.x = 0;
 	
 	uint32_t curr_weight = dungeon->cells[loc.y][loc.x].weight_tunneling;
 	
@@ -169,11 +161,9 @@ Coordinate move_rand(Dungeon *dungeon, Coordinate loc, int avoid_npc, int (*immu
 	
 	int i = 0;
 	
-	Coordinate next = {
-		
-		.y = 0,
-		.x = 0
-	};
+	Coordinate next;
+	next.y = 0;
+	next.x = 0;
 
     int move = utils_rand_between(0, 7, NULL);
 	for (i = 0; i < 8; i++) {
@@ -255,22 +245,23 @@ Coordinate move_rand(Dungeon *dungeon, Coordinate loc, int avoid_npc, int (*immu
 	return next;
 }
 
-Coordinate move_pc(Dungeon *dungeon, Character_PC *pc, int direction[2]) {
+Coordinate move_pc(Dungeon *dungeon, PC *pc, int direction[2]) {
 	
-	Coordinate next = {
-		
-		.y = pc->location.y + direction[0],
-		.x = pc->location.x + direction[1]
-	};
-	
-	if (dungeon_coordinate_inbounds(next) && !cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) { return next; }
-	if (direction[0] && direction[1]) {
-		
-		next.y = pc->location.y;
-		next.x = pc->location.x + direction[1];
-		if (dungeon_coordinate_inbounds(next) && !cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) { return next; }
+	Coordinate next;
+	if (pc) {
+		Coordinate next;
 		next.y = pc->location.y + direction[0];
-		next.x = pc->location.x;
+		next.x = pc->location.x + direction[1];
+		
+		if (dungeon_coordinate_inbounds(next) && !cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) { return next; }
+		if (direction[0] && direction[1]) {
+			
+			next.y = pc->location.y;
+			next.x = pc->location.x + direction[1];
+			if (dungeon_coordinate_inbounds(next) && !cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) { return next; }
+			next.y = pc->location.y + direction[0];
+			next.x = pc->location.x;
+		}
 	}
 	next.y = 0;
 	next.x = 0;
@@ -278,7 +269,7 @@ Coordinate move_pc(Dungeon *dungeon, Character_PC *pc, int direction[2]) {
 	return next;
 }
 
-Coordinate move_npc0(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npc0(Dungeon *dungeon, NPC *npc) {
 	
 	/* 
 		npc is unintelligent, non-telepathic, non-tunneling, and predictable
@@ -289,7 +280,7 @@ Coordinate move_npc0(Dungeon *dungeon, Character_NPC *npc) {
 	return move_away(dungeon, npc->location, npc->prev_location, 0, cell_immutable_ntunneling);
 }
 
-Coordinate move_npc1(Dungeon *dungeon, Character_NPC *npc, Coordinate reference) {
+Coordinate move_npc1(Dungeon *dungeon, NPC *npc, Coordinate reference) {
 	
 	/*
 		npc is intelligent, non-telepathic, non-tunneling, and predictable
@@ -303,20 +294,20 @@ Coordinate move_npc1(Dungeon *dungeon, Character_NPC *npc, Coordinate reference)
 	Coordinate known = dungeon_los(*dungeon, npc->location, reference);
 	if (!cell_immutable_tunneling(dungeon->cells[known.y][known.x])) {
 
-		npc->last_known = reference;
+		npc->pc_last_known = reference;
         return move_min_ntunneling(dungeon, npc->location, 1);
 	}
-    else if (coordinate_is_same(npc->last_known, npc->location)) {
+    else if (coordinate_is_same(npc->pc_last_known, npc->location)) {
 
-        npc->last_known.y = 0;
-        npc->last_known.x = 0;
+        npc->pc_last_known.y = 0;
+        npc->pc_last_known.x = 0;
     }
 
-	if (!cell_immutable_tunneling(dungeon->cells[npc->last_known.y][npc->last_known.x]))  { return move_towards(dungeon, npc->location, npc->last_known, 1, cell_immutable_ntunneling); }
+	if (!cell_immutable_tunneling(dungeon->cells[npc->pc_last_known.y][npc->pc_last_known.x]))  { return move_towards(dungeon, npc->location, npc->pc_last_known, 1, cell_immutable_ntunneling); }
 	return move_away(dungeon, npc->location, npc->prev_location, 1, cell_immutable_ntunneling);
 }
 
-Coordinate move_npc2(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npc2(Dungeon *dungeon, NPC *npc) {
 	
 	/* 
 		npc is unintelligent, telepathic, non-tunneling, and predictable
@@ -332,7 +323,7 @@ Coordinate move_npc2(Dungeon *dungeon, Character_NPC *npc) {
 	
 	return next;
 }
-Coordinate move_npc3(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npc3(Dungeon *dungeon, NPC *npc) {
 	
 	/* 
 		npc is intelligent, telepathic, non-tunneling, and predictable
@@ -343,7 +334,7 @@ Coordinate move_npc3(Dungeon *dungeon, Character_NPC *npc) {
 	return move_min_ntunneling(dungeon, npc->location, 1);
 }
 
-Coordinate move_npc4(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npc4(Dungeon *dungeon, NPC *npc) {
 	
 	/* 
 		npc is unintelligent, non-telepathic, tunneling, and predictable
@@ -354,7 +345,7 @@ Coordinate move_npc4(Dungeon *dungeon, Character_NPC *npc) {
 	return move_away(dungeon, npc->location, npc->prev_location, 0, cell_immutable_tunneling);
 }
 
-Coordinate move_npc5(Dungeon *dungeon, Character_NPC *npc, Coordinate reference) {
+Coordinate move_npc5(Dungeon *dungeon, NPC *npc, Coordinate reference) {
 	
 	/* 
 		npc is intelligent, non-telepathic, tunneling, and predictable
@@ -368,20 +359,20 @@ Coordinate move_npc5(Dungeon *dungeon, Character_NPC *npc, Coordinate reference)
     Coordinate known = dungeon_los(*dungeon, npc->location, reference);
     if (!cell_immutable_tunneling(dungeon->cells[known.y][known.x])) {
 
-        npc->last_known = reference;
+        npc->pc_last_known = reference;
         return move_min_tunneling(dungeon, npc->location, 1);
     }
-    else if (coordinate_is_same(npc->last_known, npc->location)) {
+    else if (coordinate_is_same(npc->pc_last_known, npc->location)) {
 
-        npc->last_known.y = 0;
-        npc->last_known.x = 0;
+        npc->pc_last_known.y = 0;
+        npc->pc_last_known.x = 0;
     }
 
-    if (!cell_immutable_tunneling(dungeon->cells[npc->last_known.y][npc->last_known.x]))  { return move_towards(dungeon, npc->location, npc->last_known, 1, cell_immutable_tunneling); }
+    if (!cell_immutable_tunneling(dungeon->cells[npc->pc_last_known.y][npc->pc_last_known.x]))  { return move_towards(dungeon, npc->location, npc->pc_last_known, 1, cell_immutable_tunneling); }
     return move_away(dungeon, npc->location, npc->prev_location, 1, cell_immutable_tunneling);
 }
 
-Coordinate move_npc6(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npc6(Dungeon *dungeon, NPC *npc) {
 	
 	/* 
 		npc is unintelligent, telepathic, tunneling, and predictable
@@ -399,7 +390,7 @@ Coordinate move_npc6(Dungeon *dungeon, Character_NPC *npc) {
 	return next;
 }
 
-Coordinate move_npc7(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npc7(Dungeon *dungeon, NPC *npc) {
 	
 	/* 
 		npc is intelligent, telepathic, tunneling, and predictable
@@ -411,7 +402,7 @@ Coordinate move_npc7(Dungeon *dungeon, Character_NPC *npc) {
     return next;
 }
 
-Coordinate move_npc8(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npc8(Dungeon *dungeon, NPC *npc) {
 	
 	/* 
 		npc is unintelligent, non-telepathic, non-tunneling, and eradic
@@ -422,7 +413,7 @@ Coordinate move_npc8(Dungeon *dungeon, Character_NPC *npc) {
 	return move_rand(dungeon, npc->location, 0, cell_immutable_ntunneling);
 }
 
-Coordinate move_npc9(Dungeon *dungeon, Character_NPC *npc, Coordinate reference) {
+Coordinate move_npc9(Dungeon *dungeon, NPC *npc, Coordinate reference) {
 	
 	/* 
 		npc is intelligent, non-telepathic, non-tunneling, and eradic
@@ -433,7 +424,7 @@ Coordinate move_npc9(Dungeon *dungeon, Character_NPC *npc, Coordinate reference)
 	return move_rand(dungeon, npc->location, 1, cell_immutable_ntunneling);
 }
 
-Coordinate move_npcA(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npcA(Dungeon *dungeon, NPC *npc) {
 	
 	/* 
 		npc is unintelligent, telepathic, non-tunneling, and eradic
@@ -444,7 +435,7 @@ Coordinate move_npcA(Dungeon *dungeon, Character_NPC *npc) {
 	return move_rand(dungeon, npc->location, 0, cell_immutable_ntunneling);
 }
 
-Coordinate move_npcB(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npcB(Dungeon *dungeon, NPC *npc) {
 	
 	/* 
 		npc is intelligent, telepathic, non-tunneling, and eradic
@@ -455,7 +446,7 @@ Coordinate move_npcB(Dungeon *dungeon, Character_NPC *npc) {
 	return move_rand(dungeon, npc->location, 1, cell_immutable_ntunneling);
 }
 
-Coordinate move_npcC(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npcC(Dungeon *dungeon, NPC *npc) {
 	
 	/* 
 		npc is unintelligent, non-telepathic, tunneling, and eradic
@@ -466,7 +457,7 @@ Coordinate move_npcC(Dungeon *dungeon, Character_NPC *npc) {
 	return move_rand(dungeon, npc->location, 0, cell_immutable_tunneling);
 }
 
-Coordinate move_npcD(Dungeon *dungeon, Character_NPC *npc, Coordinate reference) {
+Coordinate move_npcD(Dungeon *dungeon, NPC *npc, Coordinate reference) {
 	
 	/* 
 		npc is intelligent, non-telepathic, tunneling, and eradic
@@ -477,7 +468,7 @@ Coordinate move_npcD(Dungeon *dungeon, Character_NPC *npc, Coordinate reference)
 	return move_rand(dungeon, npc->location, 1, cell_immutable_tunneling);
 }
 
-Coordinate move_npcE(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npcE(Dungeon *dungeon, NPC *npc) {
 	
 	/* 
 		npc is unintelligent, telepathic, tunneling, and eradic
@@ -488,7 +479,7 @@ Coordinate move_npcE(Dungeon *dungeon, Character_NPC *npc) {
 	return move_rand(dungeon, npc->location, 0, cell_immutable_tunneling);
 }
 
-Coordinate move_npcF(Dungeon *dungeon, Character_NPC *npc) {
+Coordinate move_npcF(Dungeon *dungeon, NPC *npc) {
 	
 	/* 
 		npc is intelligent, telepathic, tunneling, and eradic

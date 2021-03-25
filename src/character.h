@@ -1,4 +1,6 @@
+#include <iostream>
 #include <stdint.h>
+#include <type_traits>
 
 #ifndef CHARACTER_H
 #define CHARACTER_H
@@ -21,46 +23,40 @@
 
 
 /******* struct declarations ******/
-typedef struct {
-	
-	Coordinate location;
-	Coordinate prev_location;
-	
-	uint16_t hp;
-	uint8_t speed;
-	uint16_t damage;
-	uint32_t num_kills;
-} Character_PC;
+class Character {
+	public:
+		Coordinate location;
+		Coordinate prev_location;
+		
+		uint32_t id;
+		
+		uint8_t speed;
+		uint16_t hp;
+		uint16_t damage;
+};
 
-typedef struct {
-	
-	uint32_t id;
-	
-	Coordinate location;
-	Coordinate prev_location;
-	Coordinate last_known;
-	
-	uint8_t type;
-	
-	uint8_t speed;
-	uint16_t hp;
-	uint16_t damage;
-} Character_NPC;
+class PC: public Character {
+	public:
+		Character* last_seen;
+		
+		uint32_t num_kills;
+};
 
-typedef struct {
-	
-	Character_PC *pc;
-	Character_NPC *npc;
-} Character_Wrapper;
+class NPC : public Character {
+	public: 
+		uint8_t type;
+		
+		Coordinate pc_last_known;
+};
 
 /****** function declarations *****/
-Character_PC character_init_pc(Coordinate loc, uint16_t hp, uint16_t damage, uint8_t speed);
+PC character_init_pc(Coordinate loc, uint16_t hp, uint16_t damage, uint8_t speed);
 
-Character_NPC character_init_npc(uint32_t id, Coordinate loc, uint8_t type, uint16_t hp, uint16_t damage, uint8_t speed);
+NPC character_init_npc(uint32_t id, Coordinate loc, uint8_t type, uint16_t hp, uint16_t damage, uint8_t speed);
 
-void character_print_pc(Character_PC pc, uint8_t y, uint8_t x, int print_fill, int print_color);
+void character_print_pc(PC pc, uint8_t y, uint8_t x, int print_fill, int print_color);
 
-void character_print_npc(Character_NPC npc, uint8_t y, uint8_t x, int print_fill, int print_color);
+void character_print_npc(NPC npc, uint8_t y, uint8_t x, int print_fill, int print_color);
 
 
 #endif /* CHARACTER_H */

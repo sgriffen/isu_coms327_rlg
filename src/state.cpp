@@ -19,16 +19,20 @@
 /****** function definitions ******/
 GameState state_init(uint32_t num_dungeons, uint32_t num_npcs) {
 	
-	GameState state = {
-		
-		.allow_move = 0,
-		.menu_index = 0,
-		.dungeon_index = 0,
-		.num_dungeons = num_dungeons,
-		.num_dungeons_generated = 0,
-		.message = NULL,
-		.characters = NULL
-	};
+	GameState state;
+	state.allow_move_pc = 1;
+	state.allow_move_npc = 0;
+	state.characters = NULL;
+	state.menu_index = 0;
+	state.dungeon_index = 0;
+	state.num_dungeons = num_dungeons;
+	state.num_dungeons_generated = 0;
+	state.message = NULL;
+	state.turn = 0;
+	state.fog_enabled = 1;
+	state.cursor.y = 0;
+	state.cursor.x = 0;
+	state.menu_offset = 0;
 	
 	state.dungeons = (Dungeon*)calloc(num_dungeons, sizeof(Dungeon));
 	state.dungeons[0] = dungeon_init((uint8_t)DUNGEON_HEIGHT, (uint8_t)DUNGEON_WIDTH, num_npcs, 0, 0, 1);
@@ -45,15 +49,14 @@ void state_init_pc(GameState *g_state) {
 		player character (pc) is placed at a random location in rooms[0] of dungeon[0]
 	*/
 	
-	Character_PC pc;
+	PC pc;
 	
-	Coordinate loc = {
-		
-		.y = utils_rand_between(g_state->dungeons[0].rooms[0].tl.y+ROOM_BORDER_WIDTH, g_state->dungeons[0].rooms[0].br.y-ROOM_BORDER_WIDTH, NULL),
-		.x = utils_rand_between(g_state->dungeons[0].rooms[0].tl.x+ROOM_BORDER_WIDTH, g_state->dungeons[0].rooms[0].br.x-ROOM_BORDER_WIDTH, NULL)
-	};
+	Coordinate loc;
+	loc.y = (uint8_t)utils_rand_between(g_state->dungeons[0].rooms[0].tl.y+ROOM_BORDER_WIDTH, g_state->dungeons[0].rooms[0].br.y-ROOM_BORDER_WIDTH, NULL);
+	loc.x = (uint8_t)utils_rand_between(g_state->dungeons[0].rooms[0].tl.x+ROOM_BORDER_WIDTH, g_state->dungeons[0].rooms[0].br.x-ROOM_BORDER_WIDTH, NULL);
 	
 	pc = character_init_pc(loc, 1, 1, PC_SPEED);
+	pc.id = 0;
 	g_state->pc = pc;
 	
 	return;
@@ -63,38 +66,27 @@ void state_init_queue(GameState *g_state) {
 	
 	int i = 0;
 	
-	g_state->characters = (Character_Wrapper*)calloc((g_state->dungeons[g_state->dungeon_index].num_npcs)+1, sizeof(Character_Wrapper));
+	g_state->characters = (Character**)calloc((g_state->dungeons[g_state->dungeon_index].num_npcs)+1, sizeof(Character*));
 	g_state->queue = queue_init((g_state->dungeons[g_state->dungeon_index].num_npcs)+1);
 	g_state->queue_position = 0;
 	
 	/* wrap pc and npc inside Character wrappers for queue */
-	Character_Wrapper wrapper_pc = {
-		
-		.pc = &(g_state->pc),
-		.npc = NULL
-	};
-    g_state->characters[0] = wrapper_pc;
-	g_state->dungeons[g_state->dungeon_index].cells[g_state->characters[0].pc->location.y][g_state->characters[0].pc->location.x].character = g_state->characters[0];
+    g_state->characters[0] = &(g_state->pc);
+	g_state->dungeons[g_state->dungeon_index].cells[g_state->characters[0]->location.y][g_state->characters[0]->location.x].character = g_state->characters[0];
 	for (i = 0; i < (g_state->dungeons[g_state->dungeon_index].num_npcs); i++) {
 		
-		Character_Wrapper wrapper_npc = {
-			
-			.pc = NULL,
-			.npc = &(g_state->dungeons[g_state->dungeon_index].npcs[i])
-		};
-        g_state->characters[i+1] = wrapper_npc;
-		
-		g_state->dungeons[g_state->dungeon_index].cells[g_state->characters[i+1].npc->location.y][g_state->characters[i+1].npc->location.x].character = g_state->characters[i+1];
+        g_state->characters[i+1] = &(g_state->dungeons[g_state->dungeon_index].npcs[i]);
+		g_state->dungeons[g_state->dungeon_index].cells[g_state->characters[i+1]->location.y][g_state->characters[i+1]->location.x].character = g_state->characters[i+1];
 	}
 
     /* organize pc and npcs into priority queue based on movement speed */
     for (i = 0; i < g_state->dungeons[g_state->dungeon_index].num_npcs; i++) {
 
-        queue_enqueue(&(g_state->queue), queue_node_init(&(g_state->characters[i+1]), CHARACTER_TURN(g_state->characters[i+1].npc->speed)));
-        g_state->dungeons[g_state->dungeon_index].cells[g_state->characters[i+1].npc->location.y][g_state->characters[i+1].npc->location.x].character.npc = g_state->characters[i+1].npc;
+        queue_enqueue(&(g_state->queue), queue_node_init(g_state->characters[i+1], CHARACTER_TURN(g_state->characters[i+1]->speed)));
+        g_state->dungeons[g_state->dungeon_index].cells[g_state->characters[i+1]->location.y][g_state->characters[i+1]->location.x].character = g_state->characters[i+1];
     }
-    queue_enqueue(&(g_state->queue), queue_node_init(&(g_state->characters[0]), CHARACTER_TURN(g_state->characters[0].pc->speed)));
-    g_state->dungeons[g_state->dungeon_index].cells[g_state->characters[0].pc->location.y][g_state->characters[0].pc->location.x].character.pc = g_state->characters[0].pc;
+    queue_enqueue(&(g_state->queue), queue_node_init(g_state->characters[0], CHARACTER_TURN(g_state->characters[0]->speed)));
+    g_state->dungeons[g_state->dungeon_index].cells[g_state->characters[0]->location.y][g_state->characters[0]->location.x].character = g_state->characters[0];
 
     g_state->queue_position = g_state->queue.nodes[0].priority + 1;
 }
@@ -107,8 +99,8 @@ void state_deinit_queue(GameState *g_state) {
 	for (i = 0; i < g_state->dungeons[g_state->dungeon_index].volitile_height; i++) {
 		for (j = 0; j < g_state->dungeons[g_state->dungeon_index].volitile_width; j++) {
 			
-			g_state->dungeons[g_state->dungeon_index].cells[i][j].character.pc = NULL;
-			g_state->dungeons[g_state->dungeon_index].cells[i][j].character.npc = NULL;
+			g_state->dungeons[g_state->dungeon_index].cells[i][j].character = NULL;
+			g_state->dungeons[g_state->dungeon_index].cells[i][j].character = NULL;
 		}
 	}
 	
@@ -122,16 +114,18 @@ void state_run(GameState *g_state, RunArgs run_args) {
 	
 	state_init_queue(g_state);
 	
+	dungeon_pc_los(&(g_state->dungeons[g_state->dungeon_index]), (Character*)(&(g_state->pc)), 1);
+	
 	while (g_state->pc.hp > 0 && state_contains_npcs(g_state)) {
 		
 		if (g_state->menu_index) {
 			
 			state_draw(*g_state, run_args.print_config.fill, run_args.print_config.color, 0);
-			state_parse_input(g_state, NULL);
+			if (!state_parse_input(g_state, NULL)) { break; }
 		}
 		else {
 			
-			if (g_state->allow_move) {
+			if (g_state->allow_move_npc) {
 				
 				pathfinder_ntunneling(&(g_state->dungeons[g_state->dungeon_index]), &(g_state->pc.location));
 				pathfinder_tunneling(&(g_state->dungeons[g_state->dungeon_index]), &(g_state->pc.location));
@@ -152,42 +146,41 @@ int state_turn(GameState *g_state, RunArgs run_args) {
 	int game_run = 1;
 	
 	/* draw dungeon with updated npc positions */
+	dungeon_pc_los(&(g_state->dungeons[g_state->dungeon_index]), (Character*)(&(g_state->pc)), 1);
 	state_draw(*g_state, run_args.print_config.fill, run_args.print_config.color, 0);
 	
+	if (!g_state->allow_move_npc && !g_state->allow_move_pc) { state_parse_input(g_state, NULL); }
+	
 	/* dequeue nodes, stopping at pc node */
-	while ((i < ((g_state->queue.index) + 1)) && !queue_is_empty(g_state->queue)) {
+	while ((i < ((g_state->queue.index) + 1)) && !queue_is_empty(g_state->queue) && g_state->dungeons[g_state->dungeon_index].num_npcs_dead < g_state->dungeons[g_state->dungeon_index].num_npcs) {
 		
 		QueueNode node = queue_dequeue(&(g_state->queue));
         node.priority = g_state->queue_position;
-		Character_Wrapper *wrapper = (Character_Wrapper*)(node.element);
-		
-		if (wrapper->pc) {
+		Character *wrapper = (Character*)(node.element);
+		if (!(wrapper->id)) {
 			
 			/* move pc */
-			if (wrapper->pc->hp > 0) {
+			if (g_state->allow_move_pc && wrapper->hp > 0) {
 				
 				game_run = state_parse_input(g_state, wrapper);
 				queue_enqueue(&(g_state->queue), node);
 				
 				/* draw dungeon with updated npc positions */
 				state_draw(*g_state, run_args.print_config.fill, run_args.print_config.color, 0);
+				
+				(g_state->turn)++;
 			}
 		} else {
 			
-			if (!g_state->allow_move) { queue_enqueue(&(g_state->queue), node); }
-			else if (wrapper->npc->hp > 0) {
+			if (!g_state->allow_move_npc) { queue_enqueue(&(g_state->queue), node); }
+			else if (wrapper->hp > 0) {
 
-				state_move_npc(&(g_state->dungeons[g_state->dungeon_index]), *wrapper, g_state->pc);
+				state_move_npc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, g_state->pc);
 				queue_enqueue(&(g_state->queue), node);
-			} else {
-				
-				g_state->dungeons[g_state->dungeon_index].cells[wrapper->npc->location.y][wrapper->npc->location.x].character.npc = NULL;
-				(g_state->dungeons[g_state->dungeon_index].num_npcs_dead)++;
-				(g_state->pc.num_kills)++;
+				(g_state->turn)++;
 			}
 		}
 		
-		if (g_state->allow_move) { (g_state->turn)++; }
         (g_state->queue_position)++;
 		i++;
 		
@@ -197,7 +190,7 @@ int state_turn(GameState *g_state, RunArgs run_args) {
 	return game_run;
 }
 
-int state_parse_input(GameState *g_state, Character_Wrapper *wrapper) {
+int state_parse_input(GameState *g_state, Character *wrapper) {
 	
 	g_state->message = NULL;
 	
@@ -208,11 +201,13 @@ int state_parse_input(GameState *g_state, Character_Wrapper *wrapper) {
 		
 	case 1:		// in npc menu
 		
-		g_state->allow_move = 0;
+		g_state->allow_move_pc = 0;
+		g_state->allow_move_npc = 0;
 		switch(key) {
 		case 0x1b: 			// escape key
 			
 			g_state->menu_index = 0;
+			g_state->allow_move_pc = 1;
 			return 2;
 			break;
 		case KEY_DOWN:		// down arrow
@@ -223,6 +218,11 @@ int state_parse_input(GameState *g_state, Character_Wrapper *wrapper) {
 			
 			if (g_state->menu_offset) { (g_state->menu_offset)--; }
 			break;
+		case 'Q': 			// quit game
+			
+			
+			return 0;
+			break;
 		default: 
 			
 			
@@ -231,129 +231,237 @@ int state_parse_input(GameState *g_state, Character_Wrapper *wrapper) {
 		
 		return 1;
 		break;
+	case 2:		// in pc warp menu
+		
+		Coordinate next;
+		g_state->allow_move_pc = 0;
+		g_state->allow_move_npc = 0;
+		switch(key) {
+		
+		case 'g':
+		
+			next = g_state->cursor;
+			
+			wrapper = &(g_state->pc);
+			dungeon_resolve_collision(&(g_state->dungeons[g_state->dungeon_index]), wrapper, next);
+			
+			g_state->menu_index = 0;
+			g_state->allow_move_pc = 1;
+			break;
+		case 'r':
+			
+			next.y = (uint8_t)utils_rand_between(DUNGEON_BORDER_WIDTH, DUNGEON_HEIGHT-DUNGEON_BORDER_WIDTH, NULL);
+			next.x = (uint8_t)utils_rand_between(DUNGEON_BORDER_WIDTH, DUNGEON_WIDTH-DUNGEON_BORDER_WIDTH, NULL);
+			
+			wrapper = &(g_state->pc);
+			dungeon_resolve_collision(&(g_state->dungeons[g_state->dungeon_index]), wrapper, next);
+			
+			g_state->menu_index = 0;
+			g_state->allow_move_pc = 1;
+			break;
+		case KEY_UP:		// cursor move up
+			
+			next = g_state->cursor;
+			next.y -= 1;
+			if (dungeon_coordinate_inbounds(next)) { g_state->cursor = next; }
+			break;
+		case KEY_PPAGE:		// cursor move up-left
+			
+			next = g_state->cursor;
+			next.y -= 1;
+			next.x += 1;
+			if (dungeon_coordinate_inbounds(next)) {g_state->cursor = next; }
+			break;
+		case KEY_RIGHT:		// cursor move right
+			
+			next = g_state->cursor;
+			next.x += 1;
+			if (dungeon_coordinate_inbounds(next)) { g_state->cursor = next; }
+			break;
+		case KEY_NPAGE:		// cursor move down-right
+			
+			next = g_state->cursor;
+			next.y += 1;
+			next.x += 1;
+			if (dungeon_coordinate_inbounds(next)) { g_state->cursor = next; }
+			break;
+		case KEY_DOWN:		// cursor move down
+			
+			next = g_state->cursor;
+			next.y += 1;
+			if (dungeon_coordinate_inbounds(next)) { g_state->cursor = next; }
+			break;
+		case KEY_END:		// cursor move down-left
+			
+			next = g_state->cursor;
+			next.y += 1;
+			next.x -= 1;
+			if (dungeon_coordinate_inbounds(next)) { g_state->cursor = next; }
+			break;
+		case KEY_LEFT:		// cursor move left
+			
+			next = g_state->cursor;
+			next.x -= 1;
+			if (dungeon_coordinate_inbounds(next)) { g_state->cursor = next; }
+			break;
+		case KEY_HOME:		// cursor move up-left
+			
+			next = g_state->cursor;
+			next.y -= 1;
+			next.x -= 1;
+			if (dungeon_coordinate_inbounds(next)) { g_state->cursor = next; }
+			break;
+		case 'Q': 			// quit game
+			
+			return 0;
+			break;
+		default:			// no-op do nothing
+			
+			
+			break;
+		}
+		
+		return 1;
+		break;
 	default:	// in no menu
 		
-		g_state->allow_move = 1;
+		g_state->allow_move_npc = 1;
+		g_state->allow_move_pc = 1;
 		switch(key) {
 
-		case KEY_UP:		// keypad '8'
+		case KEY_UP:		// pc move up
 			CASE_MOVE_U:
 			
 			move_matrix[0] = -1;
 			move_matrix[1] = 0;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), *wrapper, move_matrix)) {
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
 				
 				g_state->message = (char*)calloc(strlen("Could not move PC up")+1, sizeof(char));
 				printf((g_state->message), "Could not move PC up");
 			}
 			break;
-		case KEY_PPAGE:		// keypad '9'
+		case KEY_PPAGE:		// pc move up-right
 			CASE_MOVE_UR:
 			
 			move_matrix[0] = -1;
 			move_matrix[1] = 1;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), *wrapper, move_matrix)) {
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
 				
 				g_state->message = (char*)calloc(strlen("Could not move PC up-right")+1, sizeof(char));
 				sprintf((g_state->message), "Could not move PC up-right");
 			}
 			break;
-		case KEY_RIGHT:		// keypad '6'
+		case KEY_RIGHT:		// pc move right
 			CASE_MOVE_R:
 			
 			move_matrix[0] = 0;
 			move_matrix[1] = 1;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), *wrapper, move_matrix)) {
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
 				
 				g_state->message = (char*)calloc(strlen("Could not move PC right")+1, sizeof(char));
 				sprintf((g_state->message), "Could not move PC right");
 			}
 			break;
-		case KEY_NPAGE:		// keypad '3'
+		case KEY_NPAGE:		// pc move down-right
 			CASE_MOVE_DR:
 			
 			move_matrix[0] = 1;
 			move_matrix[1] = 1;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), *wrapper, move_matrix)) {
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
 				
 				g_state->message = (char*)calloc(strlen("Could not move PC down-right")+1, sizeof(char));
 				sprintf((g_state->message), "Could not move PC down-right");
 			}
 			break;
-		case KEY_DOWN:		// keypad '2'
+		case KEY_DOWN:		// pc move down
 			CASE_MOVE_D:
 			
 			move_matrix[0] = 1;
 			move_matrix[1] = 0;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), *wrapper, move_matrix)) {
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
 				
 				g_state->message = (char*)calloc(strlen("Could not move PC down")+1, sizeof(char));
 				sprintf((g_state->message), "Could not move PC down");
 			}
 			break;
-		case KEY_END:		// keypad '1'
+		case KEY_END:		// pc move down-left
 			CASE_MOVE_DL:
 			
 			move_matrix[0] = 1;
 			move_matrix[1] = -1;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), *wrapper, move_matrix)) {
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
 				
 				g_state->message = (char*)calloc(strlen("Could not move PC down-left")+1, sizeof(char));
 				sprintf((g_state->message), "Could not move PC down-left");
 			}
 			break;
-		case KEY_LEFT:		// keypad '4'
+		case KEY_LEFT:		// pc move left
 			CASE_MOVE_L:
 			
 			move_matrix[0] = 0;
 			move_matrix[1] = -1;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), *wrapper, move_matrix)) {
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
 				
 				g_state->message = (char*)calloc(strlen("Could not move PC left")+1, sizeof(char));
 				sprintf((g_state->message), "Could not move PC left");
 			}
 			break;
-		case KEY_HOME:		// keypad '7'
+		case KEY_HOME:		// pc move up-left
 			CASE_MOVE_UL:
 			
 			move_matrix[0] = -1;
 			move_matrix[1] = -1;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), *wrapper, move_matrix)) {
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
 				
 				g_state->message = (char*)calloc(strlen("Could not move PC up-left")+1, sizeof(char));
 				printf((g_state->message), "Could not move PC up-left");
 			}
 			break;
-		case KEY_B2:		// keypad '5'
+		case KEY_B2:		// pc rest
 			CASE_MOVE_REST:
 			
 			move_matrix[0] = 0;
 			move_matrix[1] = 0;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), *wrapper, move_matrix)) {
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
 				
 				g_state->message = (char*)calloc(strlen("Could not let PC rest")+1, sizeof(char));
 				sprintf((g_state->message), "Could not let PC rest");
 			}
 			break;
-		case '<':			// go up staircase
+		case '<':			// pc go up staircase
 			
-			g_state->allow_move = 0;
-			if (((g_state->dungeon_index - 1) > -1) && g_state->dungeons[g_state->dungeon_index].cells[g_state->pc.location.y][g_state->pc.location.x].type == CellType_Stair_up) { state_decrease_dungeon(g_state); }
+			g_state->allow_move_npc = 0;
+			if (((g_state->dungeon_index - 1) > -1) && g_state->dungeons[g_state->dungeon_index].cells[g_state->pc.location.y][g_state->pc.location.x].type_current == CellType_Stair_up) { state_decrease_dungeon(g_state); }
 			break;
-		case '>':			// go down staircase
+		case '>':			// pc go down staircase
 			
-			g_state->allow_move = 0;
-			if (((g_state->dungeon_index + 1) < g_state->num_dungeons) && g_state->dungeons[g_state->dungeon_index].cells[g_state->pc.location.y][g_state->pc.location.x].type == CellType_Stair_down) { state_increase_dungeon(g_state); }
+			g_state->allow_move_npc = 0;
+			if (((g_state->dungeon_index + 1) < g_state->num_dungeons) && g_state->dungeons[g_state->dungeon_index].cells[g_state->pc.location.y][g_state->pc.location.x].type_current == CellType_Stair_down) { state_increase_dungeon(g_state); }
 			break;
 		case 'm':			// enter npc menu
 			
-			g_state->allow_move = 0;
+			g_state->allow_move_npc = 0;
+			g_state->allow_move_pc = 0;
 			g_state->menu_index = 1;
+			return 2;
+			break;
+		case 'f':			// enable/disable fog
+			
+			g_state->fog_enabled = !(g_state->fog_enabled);
+			g_state->allow_move_npc = 0;
+			break;
+		case 'g':			// enter pc warping menu
+			
+			g_state->cursor = g_state->pc.location;
+			g_state->allow_move_npc = 0;
+			g_state->allow_move_pc = 0;
+			g_state->menu_index = 2;
 			return 2;
 			break;
 		case 'Q': 			// quit game
 			
-			g_state->allow_move = 0;
+			g_state->allow_move_npc = 0;
+			g_state->allow_move_pc = 0;
 			return 0;
 			break;
 		case 'k':			// move up with 'k'
@@ -430,7 +538,6 @@ int state_parse_input(GameState *g_state, Character_Wrapper *wrapper) {
 			break;
 		default: 
 			
-			g_state->allow_move = 0;
 			g_state->message = (char*)calloc(strlen("Unknown key pressed: %o")+1, sizeof(char));
 			sprintf((g_state->message), "Unknown key pressed: %o", key);
 			break; 	//no-op entered, do nothing
@@ -441,25 +548,25 @@ int state_parse_input(GameState *g_state, Character_Wrapper *wrapper) {
 	}
 }
 
-int state_move_pc(Dungeon *dungeon, Character_Wrapper wrapper, int direction[2]) {
+int state_move_pc(Dungeon *dungeon, Character *wrapper, int direction[2]) {
 	
-	Character_PC *pc = wrapper.pc;
+	PC *pc = (PC*)wrapper;
+	
 	Coordinate next = move_pc(dungeon, pc, direction);
 	
 	if (cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) { return 0; }
 	
 	dungeon_resolve_collision(dungeon, wrapper, next);
+	
 	return 1;
 }
 
-void state_move_npc(Dungeon *dungeon, Character_Wrapper wrapper, Character_PC pc) {
+void state_move_npc(Dungeon *dungeon, Character *wrapper, PC pc) {
 	
-	Character_NPC *npc = wrapper.npc;
-	Coordinate next = {
-		
-		.x = 0,
-		.y = 0
-	};
+	NPC *npc = (NPC*)wrapper;
+	Coordinate next;
+	next.x = 0;
+	next.y = 0;
 	
 	switch(npc->type) {
 	
@@ -534,7 +641,7 @@ void state_move_npc(Dungeon *dungeon, Character_Wrapper wrapper, Character_PC pc
 	if ((npc->type & NPC_TYPE_TUNNELING) && cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) {
 		
 		dungeon->cells[next.y][next.x].hardness = 0;
-		dungeon->cells[next.y][next.x].type = CellType_Cooridor;
+		dungeon->cells[next.y][next.x].type_next = CellType_Cooridor;
 	}
 }
 
@@ -572,6 +679,7 @@ void state_increase_dungeon(GameState *g_state) {
 	g_state->pc.location.x = g_state->dungeons[g_state->dungeon_index].staircases_up[stair_index]->location.x;
 	
 	state_init_queue(g_state);
+	
 	return;
 }
 
@@ -597,19 +705,15 @@ void state_decrease_dungeon(GameState *g_state) {
 	g_state->pc.location.x = g_state->dungeons[g_state->dungeon_index].staircases_down[stair_index]->location.x;
 	
 	state_init_queue(g_state);
+	
 	return;
 }
 
 int state_contains_npcs(GameState *g_state) {
 	
-	int i;
-	
 	if (g_state->num_dungeons_generated < g_state->num_dungeons) { return 1; }
-	
-	for (i = 0; i < g_state->num_dungeons_generated; i++) {
 		
-		if (dungeon_contains_npcs((&g_state->dungeons[i]))) { return 1; }
-	}
+	if (dungeon_contains_npcs((&g_state->dungeons[(g_state->num_dungeons)-1]))) { return 1; }
 	
 	return 0;
 }
@@ -636,6 +740,10 @@ void state_draw(GameState g_state, int print_fill, int print_color, int print_we
 		
 		state_draw_menu_npc(g_state);
 		break;
+	case 2:
+		
+		state_draw_menu_warp(g_state, print_fill, print_color, print_weight);
+		break;
 	default:			//draw current dungeon
 		
 		state_draw_dungeon(g_state, print_fill, print_color, print_weight);
@@ -650,12 +758,12 @@ void state_draw(GameState g_state, int print_fill, int print_color, int print_we
 void state_draw_dungeon(GameState g_state, int print_fill, int print_color, int print_weight) {
 	
 	if (g_state.message) 	{ mvprintw(0, 0, "%s", g_state.message); }
-	else 					{ mvprintw(0, 0, "griffens -- rlg327 implentation", g_state.turn); }
+	else 					{ mvprintw(0, 0, "griffens -- hw 1.6", g_state.turn); }
 	
-	dungeon_draw(g_state.dungeons[g_state.dungeon_index], 1, 0, print_fill, print_color, print_weight);
+	dungeon_draw(g_state.dungeons[g_state.dungeon_index], 1, 0, g_state.fog_enabled, print_fill, print_color, print_weight);
 	
-	mvprintw(22, 0, "[%d] NPCs left in dungeon level [%d]", (g_state.dungeons[g_state.dungeon_index].num_npcs - g_state.dungeons[g_state.dungeon_index].num_npcs_dead), g_state.dungeon_index);
-	mvprintw(23, 0, "Turn [%d]   Level [%d] of [%d]", g_state.turn, (g_state.dungeon_index+1), g_state.num_dungeons);
+	mvprintw(22, 0, "PC location: (%d, %d)", g_state.pc.location.y, g_state.pc.location.x);
+	mvprintw(23, 0, "Turn [%d]   [%d] NPCs left in level [%d] of [%d]", g_state.turn, (g_state.dungeons[g_state.dungeon_index].num_npcs - g_state.dungeons[g_state.dungeon_index].num_npcs_dead), (g_state.dungeon_index+1), g_state.num_dungeons);
 	
 	return;
 }
@@ -666,8 +774,8 @@ void state_draw_menu_npc(GameState g_state) {
 	int j = g_state.menu_offset;
 	
 	mvprintw(0, 0, "[%d] NPCs left in current dungeon level [%d]:", g_state.dungeons[g_state.dungeon_index].num_npcs - g_state.dungeons[g_state.dungeon_index].num_npcs_dead, (g_state.dungeon_index + 1));
-	mvprintw(1, 0, "  id :: type :: speed :: distance from player");
-	mvprintw(2, 0, "-------------------------------------");
+	mvprintw(1, 0, "  id :: type :: speed :: distance from player   ");
+	mvprintw(2, 0, "------------------------------------------------");
 	
 	for (i = 3; i < 23 && j < g_state.dungeons[g_state.dungeon_index].num_npcs; i++) {
 		
@@ -699,6 +807,24 @@ void state_draw_menu_npc(GameState g_state) {
 	return;
 }
 
+void state_draw_menu_warp(GameState g_state, int print_fill, int print_color, int print_weight) {
+	
+	if (g_state.message) 	{ mvprintw(0, 0, "%s", g_state.message); }
+	else 					{ mvprintw(0, 0, "PC warp mode", g_state.turn); }
+	
+	dungeon_draw(g_state.dungeons[g_state.dungeon_index], 1, 0, 0, print_fill, print_color, print_weight);
+	
+	init_pair(3, COLOR_BLUE, COLOR_BLACK);
+	attron(COLOR_PAIR(3));
+	attron(A_BOLD);
+	mvaddch((g_state.cursor.y)+1, g_state.cursor.x, '*');
+	attroff(A_BOLD);
+	attroff(COLOR_PAIR(3));
+	
+	mvprintw(22, 0, "Warping to location (%d, %d)", g_state.cursor.y, g_state.cursor.x);
+	mvprintw(23, 0, "'g' to warp to cursor, 'r' to warp to random location, keypad to move");
+}
+
 void state_draw_gameover_win(GameState g_state) {
 	
 	clear();
@@ -723,7 +849,7 @@ void state_draw_gameover_lose(GameState g_state, int print_fill, int print_color
 	
 	mvprintw(0, 0, "GAME OVER", g_state.turn);
 	
-	dungeon_draw(g_state.dungeons[g_state.dungeon_index], 1, 0, print_fill, print_color, print_weight);
+	dungeon_draw(g_state.dungeons[g_state.dungeon_index], 1, 0, 0, print_fill, print_color, print_weight);
 	
 	mvprintw(22, 0, "PC was defeated on turn [%d] having slain [%d] monsters in vain ... :(", g_state.turn, g_state.pc.num_kills);
 	mvprintw(23, 0, "Press ESC key to exit");

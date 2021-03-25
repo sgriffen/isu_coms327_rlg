@@ -14,24 +14,20 @@
 /****** function definitions ******/
 Queue queue_init(uint16_t length) {
 	
-	Queue queue = {
-		
-		.size = length,
-		.index = 0,
-		.nodes = (QueueNode*)calloc(length, sizeof(QueueNode))
-	};
+	Queue queue;
+	queue.size = length;
+	queue.index = 0;
+	queue.nodes = (QueueNode*)calloc(length, sizeof(QueueNode));
 	
 	return queue;
 }
 
 QueueNode queue_node_init(void *element, uint64_t priority) {
 	
-	QueueNode node = {
-		
-		.priority = priority,
-		.element = element,
-		.from = NULL
-	};
+	QueueNode node;
+	node.priority = priority;
+	node.element = element;
+	node.from = NULL;
 	
 	return node;
 }

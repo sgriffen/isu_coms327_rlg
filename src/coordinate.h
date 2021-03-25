@@ -16,11 +16,11 @@
 
 
 /******* struct declarations ******/
-typedef struct {
-	
-	uint8_t y;
-	uint8_t x;
-} Coordinate;
+class Coordinate{
+	public:
+		uint8_t y;
+		uint8_t x;
+};
 
 /****** function declarations *****/
 Coordinate coordinate_init(uint8_t y, uint8_t x);

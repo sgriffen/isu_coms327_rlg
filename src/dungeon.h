@@ -28,32 +28,32 @@
 
 
 /******* struct declarations ******/
-typedef struct {
-	
-	uint8_t height;
-	uint8_t	width;
-	uint8_t volitile_height;
-	uint8_t volitile_width;
-	
-	uint16_t num_cells;
-	uint16_t num_volitile_cells;
-	Cell **cells;
-	
-	uint16_t num_rooms;
-	Room *rooms;
-	
-	uint16_t num_staircases_up;
-	Cell **staircases_up;
-	
-	uint16_t num_staircases_down;
-	Cell **staircases_down;
-	
-	uint8_t num_npcs_defined;
-	uint32_t npc_id_next;
-	uint16_t num_npcs;
-	uint16_t num_npcs_dead;
-	Character_NPC *npcs;
-} Dungeon;
+class Dungeon {
+	public:
+		uint8_t height;
+		uint8_t	width;
+		uint8_t volitile_height;
+		uint8_t volitile_width;
+		
+		uint16_t num_cells;
+		uint16_t num_volitile_cells;
+		Cell **cells;
+		
+		uint16_t num_rooms;
+		Room *rooms;
+		
+		uint16_t num_staircases_up;
+		Cell **staircases_up;
+		
+		uint16_t num_staircases_down;
+		Cell **staircases_down;
+		
+		uint8_t num_npcs_defined;
+		uint32_t npc_id_next;
+		uint16_t num_npcs;
+		uint16_t num_npcs_dead;
+		NPC *npcs;
+};
 
 /****** function declarations *****/
 Dungeon dungeon_init(uint8_t dungeon_height, uint8_t dungeon_width, int num_npcs, int num_stairs_up, int num_stairs_down, int ommit_stairs);
@@ -88,11 +88,13 @@ int dungeon_los_lowhi(Dungeon dungeon, Coordinate start, Coordinate end);
 
 int dungeon_los_hilow(Dungeon dungeon, Coordinate start, Coordinate end);
 
-void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper character, Coordinate next);
+void dungeon_pc_los(Dungeon *dungeon, Character *pc, uint8_t mark);
+
+void dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinate next);
 
 int dungeon_contains_npcs(Dungeon *dungeon);
 
-void dungeon_draw(Dungeon dungeon, uint8_t offset_y, uint8_t offset_x, int print_fill, int print_color, int print_weight);
+void dungeon_draw(Dungeon dungeon, uint8_t offset_y, uint8_t offset_x, int print_fog, int print_fill, int print_color, int print_weight);
 
 
 #endif /* DUNGEON_H */

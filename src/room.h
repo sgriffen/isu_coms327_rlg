@@ -17,18 +17,18 @@
 
 
 /******* struct declarations ******/
-typedef struct {
-	
-	uint8_t index;
-	uint8_t height;
-	uint8_t width;
-	
-	int connected;
-	
-	Coordinate tl;
-	Coordinate br;
-	Coordinate center;
-} Room;
+class Room {
+	public:
+		uint8_t index;
+		uint8_t height;
+		uint8_t width;
+		
+		int connected;
+		
+		Coordinate tl;
+		Coordinate br;
+		Coordinate center;
+};
 
 /****** function declarations *****/
 Room room_init(uint8_t index, uint8_t room_width, uint8_t room_height);

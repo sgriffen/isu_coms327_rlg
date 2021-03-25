@@ -8,11 +8,9 @@
 /****** function definitions ******/
 Coordinate coordinate_init(uint8_t y, uint8_t x) {
 	
-	Coordinate coordinate = {
-		
-		.y = y,
-		.x = x
-	};
+	Coordinate coordinate;
+	coordinate.y = y;
+	coordinate.x = x;
 	
 	return coordinate;
 }

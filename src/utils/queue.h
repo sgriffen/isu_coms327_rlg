@@ -16,23 +16,21 @@
 
 
 /******* struct declarations ******/
-typedef struct QueueNode QueueNode;
-
-struct QueueNode {
-	
-	uint64_t priority;
-	
-	void *element;
-	QueueNode *from;
+class QueueNode {
+	public:
+		uint64_t priority;
+		
+		void *element;
+		QueueNode *from;
 };
 
-typedef struct {
+class Queue {
+	public:
+		uint16_t size;
+		uint16_t index;
 	
-	uint16_t size;
-	uint16_t index;
-	
-	QueueNode *nodes;
-} Queue;
+		QueueNode *nodes;
+};
 
 /****** function declarations *****/
 Queue queue_init(uint16_t size);

@@ -75,7 +75,7 @@ void dungeon_finit(Dungeon *dungeon, uint8_t f_pc_y, uint8_t f_pc_x, uint8_t *f_
 		for (j = room.tl.y; j < room.br.y; j++) {
 			for (k = room.tl.x; k < room.br.x; k++) {
 				
-				dungeon->cells[j][k].type = CellType_Room;
+				dungeon->cells[j][k].type_next = CellType_Room;
 				dungeon->cells[j][k].hardness = 0;
 			}
 		}
@@ -84,7 +84,7 @@ void dungeon_finit(Dungeon *dungeon, uint8_t f_pc_y, uint8_t f_pc_x, uint8_t *f_
 	for (i = 0; i < dungeon->height; i++) {
 		for (j = 0; j < dungeon->width; j++) {
 			
-			if (dungeon->cells[i][j].hardness == 0 && dungeon->cells[i][j].type != CellType_Room) { dungeon->cells[i][j].type = CellType_Cooridor; }
+			if (dungeon->cells[i][j].hardness == 0 && dungeon->cells[i][j].type_next != CellType_Room) { dungeon->cells[i][j].type_next = CellType_Cooridor; }
 		}
 	}
 	/* place up staircases in dungeon */
@@ -92,7 +92,7 @@ void dungeon_finit(Dungeon *dungeon, uint8_t f_pc_y, uint8_t f_pc_x, uint8_t *f_
 	dungeon->staircases_up = (Cell**)calloc(f_num_stairs_up, sizeof(Cell*));
 	for (i = 0; i < (f_num_stairs_up*2); i+=2) {
 		
-		dungeon->cells[f_stairs_up[i+1]][f_stairs_up[i]].type = CellType_Stair_up;
+		dungeon->cells[f_stairs_up[i+1]][f_stairs_up[i]].type_next = CellType_Stair_up;
 		dungeon->cells[f_stairs_up[i+1]][f_stairs_up[i]].hardness = 0;
 		dungeon->staircases_up[i/2] = &(dungeon->cells[f_stairs_up[i+1]][f_stairs_up[i]]);
 	}
@@ -101,7 +101,7 @@ void dungeon_finit(Dungeon *dungeon, uint8_t f_pc_y, uint8_t f_pc_x, uint8_t *f_
 	dungeon->staircases_down = (Cell**)calloc(f_num_stairs_down, sizeof(Cell*));
 	for (i = 0; i < (f_num_stairs_down*2); i+=2) {
 		
-		dungeon->cells[f_stairs_down[i+1]][f_stairs_down[i]].type = CellType_Stair_down;
+		dungeon->cells[f_stairs_down[i+1]][f_stairs_down[i]].type_next = CellType_Stair_down;
 		dungeon->cells[f_stairs_down[i+1]][f_stairs_down[i]].hardness = 0;
 		dungeon->staircases_down[i/2] = &(dungeon->cells[f_stairs_down[i+1]][f_stairs_down[i]]);
 	}
@@ -111,7 +111,7 @@ void dungeon_finit(Dungeon *dungeon, uint8_t f_pc_y, uint8_t f_pc_x, uint8_t *f_
 //		.y = f_pc_y,
 //		.x = f_pc_x
 //	};
-//	Character_PC pc = character_init_pc(pc_loc, 1, 1, PC_SPEED);
+//	PC pc = character_init_pc(pc_loc, 1, 1, PC_SPEED);
 //	dungeon->pc = pc;
 
 	return;
@@ -159,7 +159,8 @@ void dungeon_generate_cells(Dungeon *dungeon) {
 			dungeon->cells[i][j] = cell_init(i, j,-1);
 			if (i < DUNGEON_BORDER_WIDTH || j < DUNGEON_BORDER_WIDTH || i >= dungeon->height-DUNGEON_BORDER_WIDTH || j >= dungeon->width-DUNGEON_BORDER_WIDTH) {
 				
-				dungeon->cells[i][j].type = CellType_Border;
+				dungeon->cells[i][j].type_next = CellType_Border;
+				dungeon->cells[i][j].type_current = CellType_Border;
 				dungeon->cells[i][j].hardness = 255;
 			}
 		}
@@ -206,7 +207,7 @@ void dungeon_generate_rooms(Dungeon *dungeon) {
 		for (j = room.tl.y; j < room.br.y; j++) {
 			for (k = room.tl.x; k < room.br.x; k++) {
 				
-				dungeon->cells[j][k].type = CellType_Room;
+				dungeon->cells[j][k].type_next = CellType_Room;
 				dungeon->cells[j][k].hardness = 0;
 			}
 		}
@@ -224,21 +225,16 @@ int dungeon_place_room(Dungeon *dungeon, Room *room) {
 	int room_max_y = dungeon->volitile_height - room->height - (ROOM_BORDER_WIDTH);
 	int room_max_x = dungeon->volitile_width - room->width - (ROOM_BORDER_WIDTH);
 	
-	Coordinate loc_tl = {
+	Coordinate loc_tl;
+	Coordinate loc_br;
+	Coordinate loc_center;
 		
-		.y = utils_rand_between(ROOM_BORDER_WIDTH, room_max_y, NULL),
-		.x = utils_rand_between(ROOM_BORDER_WIDTH, room_max_x, NULL)
-	};
-	Coordinate loc_br = {
-		
-		.y = loc_tl.y + room->height,
-		.x = loc_tl.x + room->width
-	};
-	Coordinate loc_center = {
-		
-		.y = loc_tl.y + (room->height / 2),
-		.x = loc_tl.x + (room->width / 2)
-	};
+	loc_tl.y = (uint8_t)utils_rand_between(ROOM_BORDER_WIDTH, room_max_y, NULL);
+	loc_tl.x = (uint8_t)utils_rand_between(ROOM_BORDER_WIDTH, room_max_x, NULL);
+	loc_br.y = loc_tl.y + room->height;
+	loc_br.x = loc_tl.x + room->width;
+	loc_center.y = loc_tl.y + (room->height / 2);
+	loc_center.x = loc_tl.x + (room->width / 2);
 	
 	room_init_cells(room, loc_tl, loc_br, loc_center);
 	
@@ -284,18 +280,14 @@ void dungeon_generate_cooridors(Dungeon *dungeon) {
 		int delta_y = beta->center.y - alpha->center.y;
 		int delta_x = beta->center.x - alpha->center.x;
 		
+		Coordinate cell_start;
+		Coordinate cell_end;
 		/* start at random spot on edge of room alpha */
-		Coordinate cell_start = {
-			
-			.y = utils_rand_between(alpha->tl.y, alpha->br.y, NULL),
-			.x = utils_rand_between(alpha->tl.x, alpha->br.x, NULL)
-		};
+		cell_start.y = utils_rand_between(alpha->tl.y, alpha->br.y, NULL);
+		cell_start.x = utils_rand_between(alpha->tl.x, alpha->br.x, NULL);
 		/* end at random spot on edge of room beta */
-		Coordinate cell_end = {
-			
-			.y = utils_rand_between(beta->tl.y, beta->br.y, NULL),
-			.x = utils_rand_between(beta->tl.x, beta->br.x, NULL)
-		};
+		cell_end.y = utils_rand_between(beta->tl.y, beta->br.y, NULL);
+		cell_end.x = utils_rand_between(beta->tl.x, beta->br.x, NULL);
 		
 		if (delta_y < 0) { //room beta is above room alpha
 		
@@ -348,9 +340,9 @@ void dungeon_generate_cooridor(Dungeon *dungeon, Coordinate start, Coordinate en
 		cell = &(dungeon->cells[start.y][start.x]);
 		
 		/* if cell is not a room, mark as a cooridor */
-		if (cell->type != CellType_Room) {
+		if (cell->type_next != CellType_Room) {
 			
-			cell->type = CellType_Cooridor; 
+			cell->type_next = CellType_Cooridor; 
 			cell->hardness = 0; 
 		}
 		
@@ -382,9 +374,9 @@ void dungeon_generate_cooridor(Dungeon *dungeon, Coordinate start, Coordinate en
 				if (utils_rand_chance(35, NULL)) { corner = &(dungeon->cells[start.y][start.x]); }
 				else { corner = &(dungeon->cells[start.y-step_prev_y][start.x+step]); }
 				
-				if (corner->type != CellType_Room) {
+				if (corner->type_next != CellType_Room) {
 			
-					corner->type = CellType_Cooridor; 
+					corner->type_next = CellType_Cooridor; 
 					corner->hardness = 0; 
 				}
 			}
@@ -402,9 +394,9 @@ void dungeon_generate_cooridor(Dungeon *dungeon, Coordinate start, Coordinate en
 				if (utils_rand_chance(35, NULL)) { corner = &(dungeon->cells[start.y][start.x]); }
 				else { corner = &(dungeon->cells[start.y-step_prev_y][start.x+step]); }
 				
-				if (corner->type != CellType_Room) {
+				if (corner->type_next != CellType_Room) {
 			
-					corner->type = CellType_Cooridor; 
+					corner->type_next = CellType_Cooridor; 
 					corner->hardness = 0; 
 				}
 			}
@@ -420,9 +412,9 @@ void dungeon_generate_cooridor(Dungeon *dungeon, Coordinate start, Coordinate en
 	
 	/* connect last cell */
 	cell = &(dungeon->cells[start.y][start.x]);
-	if (cell->type != CellType_Room) {
+	if (cell->type_next != CellType_Room) {
 		
-		cell->type = CellType_Cooridor; 
+		cell->type_next = CellType_Cooridor; 
 		cell->hardness = 0; 
 	}
 
@@ -434,9 +426,9 @@ int dungeon_draw_cooridor(Dungeon *dungeon, QueueNode *nodes, Coordinate *start)
 	Coordinate *loc = (Coordinate*)(node.element);
 	while (!coordinate_is_same(*loc, *start)) {
 		
-		if (dungeon->cells[loc->y][loc->x].type != CellType_Room) {
+		if (dungeon->cells[loc->y][loc->x].type_next != CellType_Room) {
 			
-			dungeon->cells[loc->y][loc->x].type = CellType_Cooridor;
+			dungeon->cells[loc->y][loc->x].type_next = CellType_Cooridor;
 			dungeon->cells[loc->y][loc->x].hardness = 0;
 		} else {
 			
@@ -447,9 +439,9 @@ int dungeon_draw_cooridor(Dungeon *dungeon, QueueNode *nodes, Coordinate *start)
 		node = *(node.from);
 	}
 	
-	if (dungeon->cells[loc->y][loc->x].type != CellType_Room) { //mark first cell in node array
+	if (dungeon->cells[loc->y][loc->x].type_next != CellType_Room) { //mark first cell in node array
 			
-		dungeon->cells[loc->y][loc->x].type = CellType_Cooridor;
+		dungeon->cells[loc->y][loc->x].type_next = CellType_Cooridor;
 		dungeon->cells[loc->y][loc->x].hardness = 0;
 	}
 	
@@ -482,13 +474,11 @@ void dungeon_generate_staircases(Dungeon *dungeon, int num_staircase_up, int num
 			int room_index = dungeon->num_rooms-1;
 			if (i != 0) { room_index = utils_rand_between(1, dungeon->num_rooms-2, NULL); }
 			
-			Coordinate loc = {
-				
-				.y = utils_rand_between(dungeon->rooms[room_index].tl.y+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.y-ROOM_BORDER_WIDTH, NULL),
-				.x = utils_rand_between(dungeon->rooms[room_index].tl.x+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.x-ROOM_BORDER_WIDTH, NULL)
-			};
+			Coordinate loc;
+			loc.y = utils_rand_between(dungeon->rooms[room_index].tl.y+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.y-ROOM_BORDER_WIDTH, NULL);
+			loc.x = utils_rand_between(dungeon->rooms[room_index].tl.x+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.x-ROOM_BORDER_WIDTH, NULL);
 			
-			dungeon->cells[loc.y][loc.x].type = CellType_Stair_down;
+			dungeon->cells[loc.y][loc.x].type_next = CellType_Stair_down;
 			dungeon->cells[loc.y][loc.x].hardness = 0;
 			
 			dungeon->staircases_down[i] = &(dungeon->cells[loc.y][loc.x]);
@@ -501,13 +491,11 @@ void dungeon_generate_staircases(Dungeon *dungeon, int num_staircase_up, int num
 			
 			int room_index = utils_rand_between(1, dungeon->num_rooms-2, NULL);
 			
-			Coordinate loc = {
-				
-				.y = utils_rand_between(dungeon->rooms[room_index].tl.y+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.y-ROOM_BORDER_WIDTH, NULL),
-				.x = utils_rand_between(dungeon->rooms[room_index].tl.x+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.x-ROOM_BORDER_WIDTH, NULL)
-			};
+			Coordinate loc;	
+			loc.y = utils_rand_between(dungeon->rooms[room_index].tl.y+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.y-ROOM_BORDER_WIDTH, NULL);
+			loc.x = utils_rand_between(dungeon->rooms[room_index].tl.x+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.x-ROOM_BORDER_WIDTH, NULL);
 			
-			dungeon->cells[loc.y][loc.x].type = CellType_Stair_up;
+			dungeon->cells[loc.y][loc.x].type_next = CellType_Stair_up;
 			dungeon->cells[loc.y][loc.x].hardness = 0;
 			
 			dungeon->staircases_up[i] = &(dungeon->cells[loc.y][loc.x]);
@@ -534,7 +522,7 @@ void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs) {
 		dungeon->num_npcs_defined = 0;
 	}
 	else if (num_npcs > ((dungeon->num_volitile_cells) - 1)) { num_npcs = (dungeon->num_volitile_cells) - 1; }
-	dungeon->npcs =(Character_NPC*)calloc(num_npcs, sizeof(Character_NPC));
+	dungeon->npcs =(NPC*)calloc(num_npcs, sizeof(NPC));
 	
 	for (i = 0; i < num_npcs; i++) {
 		
@@ -600,11 +588,9 @@ Coordinate dungeon_los(Dungeon dungeon, Coordinate start, Coordinate end) {
 	    else, return (0, 0)
 	 */
 
-	Coordinate zero = {
-		
-		.y = 0,
-		.x = 0
-	};
+	Coordinate zero;
+	zero.y = 0;
+	zero.x = 0;
 
 	int matrix_u[2]     =  { -1,  0 };
     int matrix_ul[2]    =  { -1,  1 };
@@ -614,7 +600,8 @@ Coordinate dungeon_los(Dungeon dungeon, Coordinate start, Coordinate end) {
     int matrix_dr[2]    =  {  1, -1 };
     int matrix_r[2]     =  {  0, -1 };
     int matrix_ur[2]    =  { -1, -1 };
-
+	
+	if (coordinate_is_same(start, end)) { return end; }
 	if (    dungeon_los_ray(dungeon, start, end, matrix_u)
         ||  dungeon_los_ray(dungeon, start, end, matrix_ul)
         ||  dungeon_los_ray(dungeon, start, end, matrix_l)
@@ -641,10 +628,9 @@ Coordinate dungeon_los(Dungeon dungeon, Coordinate start, Coordinate end) {
 
 int dungeon_los_ray(Dungeon dungeon, Coordinate start, Coordinate end, int const ray_matrix[2]) {
 
-    Coordinate current = {
-        .y = start.y,
-        .x = start.x
-    };
+	Coordinate current;
+	current.y = start.y;
+	current.x = start.x;
 
     while (!cell_immutable_ntunneling(dungeon.cells[current.y][current.x]) && coordinate_is_same(current, end)) {
 
@@ -697,11 +683,9 @@ int dungeon_los_hilow(Dungeon dungeon, Coordinate start, Coordinate end) {
 	
 	int i = 0;
 	
-	Coordinate next = {
-		
-		.y = 0,
-		.x = 0
-	};
+	Coordinate next;	
+	next.y = 0;
+	next.x = 0;
 	
 	int delta_x = end.x - start.x;
 	int delta_y = end.y - start.y;
@@ -731,7 +715,33 @@ int dungeon_los_hilow(Dungeon dungeon, Coordinate start, Coordinate end) {
 	return 1;
 }
 
-void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper character, Coordinate next) {
+void dungeon_pc_los(Dungeon *dungeon, Character *pc, uint8_t mark) {
+	
+	int i = 0;
+	int j = 0;
+	
+	for (i = -2; i < 3; i++) {
+		for (j = -2 ; j < 3; j++) {
+			
+			Coordinate location = pc->location;
+			location.y += i;
+			location.x += j;
+			if (!mark && dungeon_coordinate_inbounds(location)) { dungeon->cells[location.y][location.x].visible = mark; }
+			else if (dungeon_coordinate_inbounds(location)) {
+				
+				Coordinate los = dungeon_los(*(dungeon), pc->location, location);
+				if (los.y || los.x) {
+					
+					dungeon->cells[location.y][location.x].visited = 1;
+					dungeon->cells[location.y][location.x].visible = mark;
+					dungeon->cells[location.y][location.x].type_current = dungeon->cells[location.y][location.x].type_next;
+				}
+			}
+		}
+	}
+}
+
+void dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinate next) {
 	
 	/*
 		Resolves potential collisions with the next cell a character wants to move to, and the current character that's in that cell
@@ -740,40 +750,64 @@ void dungeon_resolve_collision(Dungeon *dungeon, Character_Wrapper character, Co
 		Returns the id of an npc if a character moves into the cell the is located in (pc or npc kills npc)
 	*/
 	
-	Character_PC* pc_location = NULL;
-	Character_NPC* npc_location = NULL;
+	PC* pc_location = NULL;
+	NPC* npc_location = NULL;
 	
-	if (character.pc) {
+	if (character->id < 1) {
+		
+		dungeon_pc_los(dungeon, character, 0);
 		
 		npc_location = cell_contains_npc(dungeon->cells[next.y][next.x]);
-		if (npc_location) { npc_location->hp -= character.pc->damage; }
+		if (npc_location) {
+			
+			npc_location->hp -= character->damage;
+			if (npc_location->hp < 1) {
+				
+				dungeon->cells[npc_location->location.y][npc_location->location.x].character = NULL;
+				(dungeon->num_npcs_dead)++;
+			}
+		}
 		
-		dungeon->cells[character.pc->location.y][character.pc->location.x].character.pc = NULL;
-		dungeon->cells[next.y][next.x].character.pc = character.pc;
+		dungeon->cells[character->location.y][character->location.x].character = NULL;
+		dungeon->cells[next.y][next.x].character = character;
 		
-		character.pc->prev_location = character.pc->location;
-		character.pc->location = next;
+		character->prev_location = character->location;
+		character->location = next;
+		
+		dungeon_pc_los(dungeon, character, 1);
 	} else {
 		
 		pc_location = cell_contains_pc(dungeon->cells[next.y][next.x]);
-		if (pc_location) { pc_location->hp -= character.npc->damage; }
+		if (pc_location) {
+			
+			pc_location->hp -= character->damage;
+			if (pc_location->hp < 1) { dungeon->cells[pc_location->location.y][pc_location->location.x].character = NULL; }
+		}
 		
 		npc_location = cell_contains_npc(dungeon->cells[next.y][next.x]);
-		if (npc_location && (npc_location->id != character.npc->id)) { npc_location->hp -= character.npc->damage; }
+		if (npc_location && (npc_location->id != ((NPC*)(character))->id)) {
+			
+			npc_location->hp -= character->damage;
+			if (npc_location->hp < 1) {
+				
+				dungeon->cells[npc_location->location.y][npc_location->location.x].character = NULL;
+				(dungeon->num_npcs_dead)++;
+			}
+		}
 		
-		dungeon->cells[character.npc->location.y][character.npc->location.x].character.npc = NULL;
-		dungeon->cells[next.y][next.x].character.npc = character.npc;
+		dungeon->cells[character->location.y][character->location.x].character = NULL;
+		dungeon->cells[next.y][next.x].character = character;
 		
-		character.npc->prev_location = character.npc->location;
-		character.npc->location = next;
+		character->prev_location = character->location;
+		character->location = next;
 	}
 	
 	return;
 }
 
-int dungeon_contains_npcs(Dungeon *dungeon) { return dungeon->num_npcs - dungeon->num_npcs_dead; }
+int dungeon_contains_npcs(Dungeon *dungeon) { return dungeon->num_npcs > dungeon->num_npcs_dead; }
 
-void dungeon_draw(Dungeon dungeon, uint8_t offset_y, uint8_t offset_x, int print_fill, int print_color, int print_weight) {
+void dungeon_draw(Dungeon dungeon, uint8_t offset_y, uint8_t offset_x, int print_fog, int print_fill, int print_color, int print_weight) {
 	
 	int i = 0, j = 0;
 	int weight_offset = 0;
@@ -796,7 +830,7 @@ void dungeon_draw(Dungeon dungeon, uint8_t offset_y, uint8_t offset_x, int print
 				if (j == 0) { mvprintw((offset_y + (i + weight_offset)), (offset_x + j), "     --"); }
 				else 		{ mvprintw((offset_y + (i + weight_offset)), (offset_x + j), "--"); }
 			}
-			else if (i > -1) { cell_draw(dungeon.cells[i][j], (offset_y + i + weight_offset), (offset_x + j), print_fill, print_weight, print_color); }
+			else if (i > -1) { cell_draw(dungeon.cells[i][j], (offset_y + i + weight_offset), (offset_x + j), print_fog, print_fill, print_color, print_weight); }
 		}
 	}
 	

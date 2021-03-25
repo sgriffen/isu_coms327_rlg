@@ -28,18 +28,20 @@ typedef enum {
 } CellType;
 
 /******* struct declarations ******/
-typedef struct Cell {
-	
-	Coordinate location;
-	uint8_t hardness;
-	CellType type;
-	Character_Wrapper character;
-	
-	uint8_t visited;
-	int meta_data;
-	uint32_t weight_ntunneling;
-	uint32_t weight_tunneling;
-} Cell;
+class Cell {
+	public:
+		Coordinate location;
+		uint8_t hardness;
+		CellType type_next;
+		CellType type_current;
+		Character *character;
+		
+		uint8_t visited;
+		uint8_t visible;
+		int meta_data;
+		uint32_t weight_ntunneling;
+		uint32_t weight_tunneling;
+};
 
 /****** function declarations *****/
 Cell cell_init(uint8_t y, uint8_t x, int hardness);
@@ -48,10 +50,10 @@ int cell_immutable_ntunneling(Cell cell);
 
 int cell_immutable_tunneling(Cell cell);
 
-Character_PC* cell_contains_pc(Cell cell);
+PC* cell_contains_pc(Cell cell);
 
-Character_NPC* cell_contains_npc(Cell cell);
+NPC* cell_contains_npc(Cell cell);
 
-void cell_draw(Cell cell, uint8_t y, uint8_t x, int print_fill, int print_weight, int print_color);
+void cell_draw(Cell cell, uint8_t y, uint8_t x, int print_fog, int print_fill, int print_color, int print_weight);
 
 #endif /* CELL_H */

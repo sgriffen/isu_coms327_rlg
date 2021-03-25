@@ -12,7 +12,7 @@ size_t utils_fsize(const char *f_name, int f_close) {
 	FILE *f;
 	size_t f_size;
 	
-	f = utils_fopen(f_name, "rb"); //open file for reading
+	f = utils_fopen(f_name, (const char*)"rb"); //open file for reading
 	if (f == NULL) { return -1; }
 	
 	fseek(f, 0L, SEEK_END); //seek to end of file
@@ -29,7 +29,7 @@ size_t utils_fread(const char *f_name, FileReadBuffer f_buffer, long int read_at
 	size_t f_read_len = 0;
 	size_t f_read_total = 0;
 	
-	f = utils_fopen(f_name, "rb"); //open file for reading
+	f = utils_fopen(f_name, (const char*)"rb"); //open file for reading
 	if (f == NULL) { return -1; }
 	if (read_at > -1) { fseek(f, read_at, SEEK_SET); } //start reading specific location if desired
 	
@@ -60,7 +60,7 @@ size_t utils_fread_m(const char *f_name, int num_buffer, int buffer_offset, File
 	size_t f_read_len = 0;
 	size_t f_read_total = 0;
 	
-	f = utils_fopen(f_name, "rb"); //open file for reading
+	f = utils_fopen(f_name, (const char*)"rb"); //open file for reading
 	if (f == NULL) { return -1; }
 	if (read_at > -1) { fseek(f, read_at, SEEK_SET); } //start reading specific location if desired
 	
@@ -92,9 +92,9 @@ size_t utils_fwrite(const char *f_name, FileWriteBuffer f_buffer, long int write
 	size_t f_write_len = 0;
 	char *f_mode = "";
 	
-	if (write_clear) { f_mode = "wb+"; } 		//open file for writing, clearing contents if file exists;
-	else if (write_at > -1) { f_mode = "rb+"; } //open file for reading and writing
-	else { f_mode = "ab"; }
+	if (write_clear) { f_mode = (const char*)"wb+"; } 		//open file for writing, clearing contents if file exists;
+	else if (write_at > -1) { f_mode = (const char*)"rb+"; } //open file for reading and writing
+	else { f_mode = (const char*)"ab"; }
 	f = utils_fopen(f_name, f_mode); //open file for reading
 	if (f == NULL) { return -1; }
 	
@@ -124,9 +124,9 @@ size_t utils_fwrite_m(const char *f_name, int num_buffer, int buffer_offset, Fil
 	size_t f_write_total = 0;
 	char *f_mode = "";
 	
-	if (write_clear) { f_mode = "wb+"; } 		//open file for writing, clearing contents if file exists;
-	else if (write_at > -1) { f_mode = "rb+"; } //open file for reading and writing
-	else { f_mode = "ab"; }
+	if (write_clear) { f_mode = (const char*)"wb+"; } 		//open file for writing, clearing contents if file exists;
+	else if (write_at > -1) { f_mode = (const char*)"rb+"; } //open file for reading and writing
+	else { f_mode = (const char*)"ab"; }
 	f = utils_fopen(f_name, f_mode); //open file for reading
 	if (f == NULL) { return -1; }
 	

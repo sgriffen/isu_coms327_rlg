@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ncurses.h>
+
 /******* include custom libs ******/
 #include "./character.h"
 #include "./utils/movement.h"
@@ -10,42 +11,35 @@
 
 
 /****** function definitions ******/
-Character_PC character_init_pc(Coordinate loc, uint16_t hp, uint16_t damage, uint8_t speed) {
+PC character_init_pc(Coordinate loc, uint16_t hp, uint16_t damage, uint8_t speed) {
 	
-	Character_PC pc = {
-		
-		.location = loc,
-		.prev_location = loc,
-		.hp = hp,
-		.damage = damage,
-		.speed = speed,
-		.num_kills = 0
-	};
+	PC pc;		
+	pc.location = loc;
+	pc.prev_location = loc;
+	pc.hp = hp;
+	pc.damage = damage;
+	pc.speed = speed;
+	pc.num_kills = 0;
 	
 	return pc;
 }
-Character_NPC character_init_npc(uint32_t id, Coordinate loc, uint8_t type, uint16_t hp, uint16_t damage, uint8_t speed) {
+NPC character_init_npc(uint32_t id, Coordinate loc, uint8_t type, uint16_t hp, uint16_t damage, uint8_t speed) {
 	
-	Character_NPC npc = {
-		
-		.id = id,
-		.location = loc,
-		.prev_location = loc,
-		.last_known = {
-			
-			.y = 0,
-			.x = 0
-		},
-		.type = type,
-		.hp = hp,
-		.damage = damage,
-		.speed = speed
-	};
+	NPC npc;
+	npc.id = id;
+	npc.location = loc;
+	npc.prev_location = loc;
+	npc.pc_last_known.y = 0;
+	npc.pc_last_known.x = 0;
+	npc.type = type;
+	npc.hp = hp;
+	npc.damage = damage;
+	npc.speed = speed;
 	
 	return npc;
 }
 
-void character_print_pc(Character_PC pc, uint8_t y, uint8_t x, int print_fill, int print_color) {
+void character_print_pc(PC pc, uint8_t y, uint8_t x, int print_fill, int print_color) {
 	
 	start_color();
 	init_pair(1, COLOR_GREEN, COLOR_BLACK);
@@ -65,7 +59,7 @@ void character_print_pc(Character_PC pc, uint8_t y, uint8_t x, int print_fill, i
 	attroff(COLOR_PAIR(1));
 }
 
-void character_print_npc(Character_NPC npc, uint8_t y, uint8_t x, int print_fill, int print_color) {
+void character_print_npc(NPC npc, uint8_t y, uint8_t x, int print_fill, int print_color) {
 	
 	start_color();
 	init_pair(2, COLOR_RED, COLOR_BLACK);

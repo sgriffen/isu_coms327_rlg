@@ -13,13 +13,11 @@
 /****** function definitions ******/
 Room room_init(uint8_t index, uint8_t room_height, uint8_t room_width) {
 	
-	Room room = {
-		
-		.index = index,
-		.height = room_height,
-		.width = room_width,
-		.connected = 0
-	};
+	Room room;
+	room.index = index;
+	room.height = room_height;
+	room.width = room_width;
+	room.connected = 0;
 	
 	return room;
 }

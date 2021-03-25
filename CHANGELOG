@@ -1,3 +1,13 @@
+03/25/2021
+	- Turn in of final assignment 1.06 draft
+	- Updated README with explination of fog and warp modes
+	- Fixing final errors from c++ port and other memory errors
+	- Implemented pc warping on 'g' input
+	- Implemented fog-of-war with toggle on 'f' input
+	- Changing all main structs to c++ classes with public instance variables
+	- Updating Makefile to compile with g++
+	- Renaming all *.c files to *.cpp (keeping all *.h files the same)
+
 03/11/2021
 	- Turn in of final assignment 1.05 draft
 	- Updating README with explination of curses and dungeon traversing implementation

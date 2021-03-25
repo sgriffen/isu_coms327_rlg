@@ -1,13 +1,12 @@
 Sean Griffen (griffens)
 
 
-This is my solution to homework 1.05, User Interface with Ncurses.
+This is my solution to homework 1.06, "Fog of War" and porting to C++.
+All the structs that were defined in asssignment 1.05 have been converted to C++ classes, and all .c files have been renamed to .cpp
 It generates a random number of dungeons that are persistent as the pc moves up and down staircases. 
 Individual dungeons in the whole "game state" are the same as previous assignments, save the first and last dungeon. In the first dungeon generated, there are only down staircases, because there are no dungeons above this level. Similarly for the last dungeon, there are no up staircases because it is the lowest level for the game.
-For a player to win, they must traverse all levels in the game and kill all monsters (nearly impossible, rip).
+For a player to win, they must traverse to the last dungeon (lowest level) and defeat all the monsters in it (pretty easy with teleportation, lol)
 The number of dungeons and npcs in those dungeons can be specified using the command arguments below,
-See files "state.c", and "state.h" for this implentation. The majority of the game code happens in these files.
-The print routines are located where what's being printed, i.e, the dungeon_draw in "dungeon.c" method get's called when drawing the dungeon to the screen after the PCs turn, which calls cell_draw in "cell.c" to draw a specific cell, which calls "character_draw" in "character.c" to draw a specific character when that cell contains a character. All these functions have been updated to utilize the ncurses, instead of using printf statements
 
 Things to note:
 	- A cell denoted as a Rock is printed as ' '
@@ -17,11 +16,15 @@ Things to note:
 	- A cell denoted as a down staircase is printed as '>'
 	- A cell containing the PC is printed as '@' with the color 'green' if the color option is selected
 	- A cell containing an npc is printed as the type of that npc with the color 'red' if the color option is selected
-	- The PC is controlled using the given assignement constraints
+	- Accessing 'warp' mode and the FOW toggle are mapped to the defiend controlls on the keyboard
+	- The warp point when in that mode is denoted as a blue '*'
+	- FOW does not save previously seen character positions (yet) 
+	- The PC is controlled using the given previous assignement constraints
 		- If, when moving diagonally, the pc can't move in both directions, it will move in the direction it can
 	- Depending on the number of npcs defined, it can take a while for the next pc turn to take place
 	- By far, the slowest part of each turn cycle is generating the shortest paths (non-tunneling and tunneling) to the pc after it moves. I'm not sure how best to make this faster using my priority queue implemtaiton in queue.c, queue.h, and path alrorithms in pathfinder.c, so any suggestions would be helpful.
 		- So far, I've been relatively successful in using my own code without looking at the professors, so I'd like to solve this issue using what I have.
+		- The port to C++ didn't really help the speed much, but I know there's some optimizations I can make with the class structures now, and I just haven't yet
 
 NPC type descriptions:
 	- Type 0:
@@ -97,24 +100,6 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 		- notes: 
 		- default behavior: Printing follows required specification
 		- example command: --border f
-	- Load dungeon from file:
-		- flag: load | l
-		- arguments: <filepath>
-		- description: 
-			- <filepath> is undefined - loads a dungeon from a bit-file with the full path of "~/.rlg327/dungeon"
-			- <filepath> is defined  - loads a dungeon from a bit-file at location <filepath>
-		- notes: Bit-file must be in the format given in the assignment 1.02 requirements
-		- default behavior: No file is loaded, dungeon is generated from scratch
-		- example command: --l tmp/bit-files/file.b
-	- Save dungeon to file:
-		- flag: save | s
-		- arguments: <filepath>
-		- description: 
-			- <filepath> is undefined - writes a generated dungeon to a bit-file
-			- <filepath> is defined - writes a generated dungeon to a bit-file at location <filepath>
-		- notes: Bit-file adhears to the assignment 1.02 requirements
-		- default behavior: Dungeon is not saved to bit-file after generation
-		- example command: --s "/var/www/html/example.com/file.b"
 	- Print color:
 		- flag: color
 		- arguments:
@@ -122,17 +107,6 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 		- notes: Only PC and NPCs are printed in color
 		- default behavior: Nothing is printed with color
 		- example command: --color
-	- Print cell attributes:
-		- flag: print-cell | pc
-		- arguments: <h nt t c>
-		- description:
-			- <h>  is entered - A hardness map is printed after the base dungeon is printed. This will show all the hardness values of all the cells as a two-digit hex number. A row and column key is also displayed
-			- <nt> is entered - A non-tunneling path map is printed after the base dungeon is printed. This shows the shortest path generated to the player from any connected cells in the dungeon for non-tunneling monsters
-			- <t>  is entered - A tunneling path map is printed after the base dungeon is printed. This shows the shortest path generated to the player from any connected cells in the dungeon for tunneling monsters
-			- <c>  is entered - A cost map is printed after the base dungeon is printed. This will show the cost to move from a given cell to any cell around it
-		- notes: Arguments <nt> and <t> are automatically printed for assignment 1.03, maps are printed in the order <base> <nt> <t> <h> <c>
-		- default behavior: No additional cell information is printed after dungeon generation. Only the base dungeon is printed
-		- example command: --p-c h nt c
 	- Number of npcs to generate per level
 		- flag: nummon | nm
 		- arguments: <uint>
@@ -143,7 +117,7 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 			- If nummon is defined, all generated "dungeons" during a single "game" have the same <uint> number of npcs
 		- default behavior: A random number of npcs between <num_rooms> and <num_rooms * 2> are generated
 		- example command: --nm 20
-	- Number of dungeon to generate per game
+	- Number of dungeons to generate per game
 		- flag: numdun | nd
 		- arguments: <uint>
 		- description:
@@ -154,4 +128,4 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 	
 
 A command to run this application with all arguments defined may look as follows:
-	./rouge.o [<--print | --p> <b | f>] [<--load | --l> <filepath>] [<--save | --s> <filepath>] [--color] [<--print-cell | --pc> <h nt t c>] [<--nummmon | --nm> <uint>] [<--numdun | --nd> <uint>]
+	./rouge.o [<--print | --p> <b | f>] [--color] [<--nummmon | --nm> <uint>] [<--numdun | --nd> <uint>]

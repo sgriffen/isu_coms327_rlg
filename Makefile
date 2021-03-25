@@ -1,7 +1,7 @@
 all: rouge.o
 
-rouge.o: rouge.c rouge.h src/state.c src/state.h src/dungeon.c src/dungeon.h src/room.c src/room.h src/cell.c src/cell.h src/coordinate.c src/coordinate.h src/character.c src/character.h src/utils/math_utils.c src/utils/math_utils.h src/utils/file_utils.c src/utils/file_utils.h  src/utils/pathfinder.c src/utils/pathfinder.h src/utils/queue.c src/utils/queue.h src/utils/movement.c src/utils/movement.h
-	gcc -Wall -Werror -g3 rouge.c src/state.c src/dungeon.c src/room.c src/cell.c src/coordinate.c src/character.c src/utils/math_utils.c src/utils/file_utils.c src/utils/pathfinder.c src/utils/queue.c src/utils/movement.c -lncurses -o rouge.o
+rouge.o: rouge.cpp rouge.h src/state.cpp src/state.h src/dungeon.cpp src/dungeon.h src/room.cpp src/room.h src/cell.cpp src/cell.h src/coordinate.cpp src/coordinate.h src/character.cpp src/character.h src/utils/math_utils.cpp src/utils/math_utils.h  src/utils/pathfinder.cpp src/utils/pathfinder.h src/utils/queue.cpp src/utils/queue.h src/utils/movement.cpp src/utils/movement.h src/utils/config.h
+	g++ -Wall -Werror -g3 rouge.cpp src/state.cpp src/dungeon.cpp src/room.cpp src/cell.cpp src/coordinate.cpp src/character.cpp src/utils/math_utils.cpp src/utils/pathfinder.cpp src/utils/queue.cpp src/utils/movement.cpp -lncurses -o rouge.o
 
 clean:
 	rm -f *.o
