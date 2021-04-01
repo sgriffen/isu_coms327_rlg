@@ -28,11 +28,16 @@ class Room {
 		Coordinate tl;
 		Coordinate br;
 		Coordinate center;
+		
+		/* CONSTRUCTORS */
+		Room();
+		Room(uint8_t room_index, uint8_t room_height, uint8_t room_width);
+		
+		/* FUNCTIONS */
+		
 };
 
 /****** function declarations *****/
-Room room_init(uint8_t index, uint8_t room_width, uint8_t room_height);
-
 void room_init_cells(Room *room, Coordinate top_left, Coordinate bottom_right, Coordinate center);
 
 int rooms_intersect(int num_rooms, Room rooms[], Room *room, int space_between);

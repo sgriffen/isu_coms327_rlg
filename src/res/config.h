@@ -1,3 +1,5 @@
+#include <string>
+
 #include <stdint.h>
 
 #ifndef CONFIG_H
@@ -16,7 +18,6 @@
 typedef struct {
 	
 	uint8_t fill;
-	uint8_t color;
 	uint8_t hardness;
 	uint8_t weight_ntunneling;
 	uint8_t weight_tunneling;
@@ -27,11 +28,8 @@ typedef struct {
 	
 	PrintConfig print_config;
 	
-	uint8_t file_load;
-	char *load_dir;
-	uint8_t file_save;
-	char *save_dir;
-	
+	std::string config_npc;
+	std::string config_item;
 	uint32_t num_npcs;
 	uint32_t num_dungeons;
 } RunArgs;

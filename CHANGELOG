@@ -1,3 +1,21 @@
+03/31/2021
+	- 
+	- Creating monster parser function in main.cpp
+		- rouge_parse_monster()
+	- Adapting file_utils function for assignment 1.07 needs
+	- Creating parsing classes to store parsed information in
+		- NPC_Template
+		- Item_Template
+		- Dice
+	
+03/30/2021
+	- Reworking file structure and classes to be more object oriented
+		- Defining class functions instead of standalone functions that take pointers in
+		- Using constructors instead of init functions to create class objects
+	- Making the Makfile more Maikefiley (it's not perfect, but it's better than what it was)
+	- Renamed rouge.cpp and rouge.h main.cpp and main.h
+	- Adding new characteristics to NPCs per requirements
+
 03/25/2021
 	- Turn in of final assignment 1.06 draft
 	- Updated README with explination of fog and warp modes

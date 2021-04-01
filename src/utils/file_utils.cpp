@@ -3,7 +3,7 @@
 
 
 /****** function definitions ******/
-FILE* utils_fopen(const char *f_name, char *mode) { return fopen(f_name, mode); }
+FILE* utils_fopen(const char *f_name, const char *mode) { return fopen(f_name, mode); }
 
 int utils_fclose(FILE *f) { return fclose(f); }
 
@@ -12,7 +12,7 @@ size_t utils_fsize(const char *f_name, int f_close) {
 	FILE *f;
 	size_t f_size;
 	
-	f = utils_fopen(f_name, (const char*)"rb"); //open file for reading
+	f = utils_fopen(f_name, (char*)"rb"); //open file for reading
 	if (f == NULL) { return -1; }
 	
 	fseek(f, 0L, SEEK_END); //seek to end of file
@@ -29,7 +29,7 @@ size_t utils_fread(const char *f_name, FileReadBuffer f_buffer, long int read_at
 	size_t f_read_len = 0;
 	size_t f_read_total = 0;
 	
-	f = utils_fopen(f_name, (const char*)"rb"); //open file for reading
+	f = utils_fopen(f_name, (char*)"rb"); //open file for reading
 	if (f == NULL) { return -1; }
 	if (read_at > -1) { fseek(f, read_at, SEEK_SET); } //start reading specific location if desired
 	

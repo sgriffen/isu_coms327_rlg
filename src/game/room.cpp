@@ -4,23 +4,28 @@
 #include <unistd.h>
 #include <time.h>
 /******* include custom libs ******/
-#include "./room.h"
-#include "./utils/math_utils.h"
+#include "./classdef/room.h"
+#include "../utils/math_utils.h"
 
 /*********** global vars **********/
 
 
-/****** function definitions ******/
-Room room_init(uint8_t index, uint8_t room_height, uint8_t room_width) {
+/***** constructor definitions *****/
+Room::Room() {
 	
-	Room room;
-	room.index = index;
-	room.height = room_height;
-	room.width = room_width;
-	room.connected = 0;
-	
-	return room;
+	index 		= 0;
+	height 		= 0;
+	width 		= 0;
+	connected 	= 0;
 }
+Room::Room(uint8_t room_index, uint8_t room_height, uint8_t room_width) : Room() {
+	
+	index 	= room_index;
+	height 	= room_height;
+	width 	= room_width;
+}
+
+/****** function definitions ******/
 void room_init_cells(Room *room, Coordinate top_left, Coordinate bottom_right, Coordinate center) {
 	
 	room->tl = top_left;
@@ -88,7 +93,7 @@ Room* room_find_closest(int num_rooms, Room rooms[], int num_exclude, Room exclu
 
 int room_is_same(Room beta, Room alpha) {
 	
-	if (coordinate_is_same(beta.tl, alpha.tl) && coordinate_is_same(beta.br, alpha.br)) { return 1; }
+	if (alpha.tl.is_same(beta.tl) && alpha.br.is_same(beta.br)) { return 1; }
 	
 	return 0;
 }

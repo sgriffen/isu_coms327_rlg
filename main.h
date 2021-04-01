@@ -1,9 +1,12 @@
+#include <string>
+#include <vector>
+
 #ifndef ROUGE_H
 #define ROUGE_H
 
-#include "./src/state.h"
-//#include "./src/utils/file_utils.h"
-#include "./src/utils/config.h"
+#include "./src/game/classdef/state.h"
+#include "./src/res/config.h"
+#include "./src/res/color.h"
 
 /********** definitions ***********/
 
@@ -28,9 +31,8 @@ void rouge_clean(GameState *g_state, char *argv[], RunArgs run_args);
 
 void rouge_clean_terminal();
 
-//int fread_dungeon(Dungeon *dungeon, char* f_name);
+std::vector<NPC_Template> rouge_parse_npc(std::string filename);
 
-//int fwrite_dungeon(Dungeon dungeon, char* f_name);
-
+std::vector<Item_Template> rouge_parse_item(std::string filename);
 
 #endif /* ROUGE_H */

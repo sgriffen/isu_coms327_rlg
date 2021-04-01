@@ -5,7 +5,7 @@
 
 #include "./coordinate.h"
 #include "./character.h"
-#include "./utils/config.h"
+#include "../../res/config.h"
 
 /********** definitions ***********/
 #define CELL_HARDNESS_MIN 0
@@ -41,11 +41,16 @@ class Cell {
 		int meta_data;
 		uint32_t weight_ntunneling;
 		uint32_t weight_tunneling;
+		
+		/* CONSTRUCTORS */
+		Cell();
+		Cell(uint8_t cell_y, uint8_t cell_x, int cell_hardness);
+		
+		/* FUNCTIONS */
+		void draw(uint8_t print_y, uint8_t print_x, int print_fog, int print_fill, int print_weight);
 };
 
 /****** function declarations *****/
-Cell cell_init(uint8_t y, uint8_t x, int hardness);
-
 int cell_immutable_ntunneling(Cell cell);
 
 int cell_immutable_tunneling(Cell cell);

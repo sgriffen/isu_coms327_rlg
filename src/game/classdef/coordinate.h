@@ -15,21 +15,23 @@
 
 
 
-/******* struct declarations ******/
+/******** class declarations ******/
 class Coordinate{
 	public:
 		uint8_t y;
 		uint8_t x;
+		
+		/* CONSTRUCTORS */
+		Coordinate();
+		Coordinate(uint8_t coordinate_y, uint8_t coordinate_x);
+		
+		/* FUNCTIONS */
+		int is_same(Coordinate beta);
+		int is_neighbor_card(Coordinate beta);
+		int is_neighbor_diag(Coordinate beta);
 };
 
 /****** function declarations *****/
-Coordinate coordinate_init(uint8_t y, uint8_t x);
-
-int coordinate_is_same(Coordinate beta, Coordinate alpha);
-
-int coordinate_is_neighbor_card(Coordinate beta, Coordinate alpha);
-
-int coordinate_is_neighbor_diag(Coordinate beta, Coordinate alpha);
 
 
 #endif /* COORDINATE_H */

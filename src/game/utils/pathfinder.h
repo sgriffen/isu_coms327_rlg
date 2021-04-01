@@ -3,8 +3,8 @@
 #ifndef PATHFINDER_H
 #define PATHFINDER_H
 
-#include "../dungeon.h"
-#include "./queue.h"
+#include "./classdef/queue.h"
+#include "../classdef/dungeon.h"
 
 /*********** definitions **********/
 

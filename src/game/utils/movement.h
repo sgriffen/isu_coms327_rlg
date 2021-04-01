@@ -1,9 +1,9 @@
 #ifndef MOVEMENT_H
 #define MOVEMENT_H
 
-#include "../dungeon.h"
-#include "../character.h"
-#include "../coordinate.h"
+#include "../classdef/dungeon.h"
+#include "../classdef/character.h"
+#include "../classdef/coordinate.h"
 
 /********** definitions **********/
 

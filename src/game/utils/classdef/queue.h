@@ -3,7 +3,7 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-#include "../coordinate.h"
+#include "../../classdef/coordinate.h"
 
 
 /********** definitions **********/

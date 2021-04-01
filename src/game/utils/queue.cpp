@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 /******* include custom libs ******/
-#include "./queue.h"
+#include "./classdef/queue.h"
 
 /********** definitions **********/
 
@@ -88,7 +88,7 @@ int queue_find_neighbors_card(Queue *queue, QueueNode from, int num_neighbors, Q
 		
 		Coordinate *loc = (Coordinate*)(queue->nodes[i].element);
 		Coordinate *loc_from = (Coordinate*)(from.element);
-		if (coordinate_is_neighbor_card(*loc, *loc_from)) {
+		if (loc_from->is_neighbor_card(*loc)) {
 			
 			neighbors[visited] = &(queue->nodes[i]);
 			visited++;
@@ -107,7 +107,7 @@ int queue_find_neighbors_diag(Queue *queue, QueueNode from, int num_neighbors, Q
 		
 		Coordinate *loc = (Coordinate*)(queue->nodes[i].element);
 		Coordinate *loc_from = (Coordinate*)(from.element);
-		if (coordinate_is_neighbor_diag(*loc, *loc_from)) {
+		if (loc_from->is_neighbor_diag(*loc)) {
 			
 			neighbors[visited] = &(queue->nodes[i]);
 			visited++;

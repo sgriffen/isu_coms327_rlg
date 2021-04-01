@@ -5,10 +5,11 @@
 #include <string.h>
 
 /******* include custom libs ******/
-#include "./state.h"
+#include "./classdef/state.h"
 #include "./utils/movement.h"
-#include "./utils/math_utils.h"
 #include "./utils/pathfinder.h"
+#include "../utils/math_utils.h"
+#include "../res/color.h"
 
 /********** definitions **********/
 
@@ -16,48 +17,53 @@
 /*********** global vars **********/
 
 
-/****** function definitions ******/
-GameState state_init(uint32_t num_dungeons, uint32_t num_npcs) {
+/***** constructor definitions *****/
+GameState::GameState() {
 	
-	GameState state;
-	state.allow_move_pc = 1;
-	state.allow_move_npc = 0;
-	state.characters = NULL;
-	state.menu_index = 0;
-	state.dungeon_index = 0;
-	state.num_dungeons = num_dungeons;
-	state.num_dungeons_generated = 0;
-	state.message = NULL;
-	state.turn = 0;
-	state.fog_enabled = 1;
-	state.cursor.y = 0;
-	state.cursor.x = 0;
-	state.menu_offset = 0;
+	allow_move_pc 			= 0;
+	allow_move_npc 			= 0;
+	characters 				= NULL;
+	menu_index 				= 0;
+	dungeon_index 			= 0;
+	num_dungeons 			= 0;
+	num_dungeons_generated 	= 0;
+	message 				= NULL;
+	turn 					= 0;
+	fog_enabled 			= 1;
+	cursor.y 				= 0;
+	cursor.x 				= 0;
+	menu_offset 			= 0;
+	dungeons 				= NULL;
 	
-	state.dungeons = (Dungeon*)calloc(num_dungeons, sizeof(Dungeon));
-	state.dungeons[0] = dungeon_init((uint8_t)DUNGEON_HEIGHT, (uint8_t)DUNGEON_WIDTH, num_npcs, 0, 0, 1);
-	(state.num_dungeons_generated)++;
+	npc_templates			= std::vector<NPC_Template>();
+	item_templates			= std::vector<Item_Template>();
+}
+GameState::GameState(uint32_t state_num_dungeons, uint32_t state_num_npcs, std::vector<NPC_Template> state_npc_templates, std::vector<Item_Template> state_item_templates) : GameState() {
 	
-	state_init_pc(&state);
+	num_dungeons = state_num_dungeons;
 	
-	return state;
+	dungeons = (Dungeon*)calloc(num_dungeons, sizeof(Dungeon));
+	dungeons[0] = Dungeon((uint8_t)DUNGEON_HEIGHT, (uint8_t)DUNGEON_WIDTH, state_num_npcs, 0, 0, 1);
+	num_dungeons_generated++;
+	
+	npc_templates = state_npc_templates;
+	item_templates = state_item_templates;
+	
+	state_init_pc(this);
 }
 
+/****** function definitions ******/
 void state_init_pc(GameState *g_state) {
 	
 	/*
 		player character (pc) is placed at a random location in rooms[0] of dungeon[0]
 	*/
 	
-	PC pc;
-	
 	Coordinate loc;
 	loc.y = (uint8_t)utils_rand_between(g_state->dungeons[0].rooms[0].tl.y+ROOM_BORDER_WIDTH, g_state->dungeons[0].rooms[0].br.y-ROOM_BORDER_WIDTH, NULL);
 	loc.x = (uint8_t)utils_rand_between(g_state->dungeons[0].rooms[0].tl.x+ROOM_BORDER_WIDTH, g_state->dungeons[0].rooms[0].br.x-ROOM_BORDER_WIDTH, NULL);
 	
-	pc = character_init_pc(loc, 1, 1, PC_SPEED);
-	pc.id = 0;
-	g_state->pc = pc;
+	g_state->pc = PC((char*)"Hero", (char*)"Our only hope!", '@', PAIR_GREEN, loc, 1, 1, PC_SPEED);
 	
 	return;
 }
@@ -120,7 +126,7 @@ void state_run(GameState *g_state, RunArgs run_args) {
 		
 		if (g_state->menu_index) {
 			
-			state_draw(*g_state, run_args.print_config.fill, run_args.print_config.color, 0);
+			state_draw(*g_state, run_args.print_config.fill, 0);
 			if (!state_parse_input(g_state, NULL)) { break; }
 		}
 		else {
@@ -134,7 +140,7 @@ void state_run(GameState *g_state, RunArgs run_args) {
 		}
 	}
 	
-	state_gameover(g_state, run_args.print_config.fill, run_args.print_config.color, 0);
+	state_gameover(g_state, run_args.print_config.fill, 0);
 	
 	return;
 }
@@ -147,44 +153,45 @@ int state_turn(GameState *g_state, RunArgs run_args) {
 	
 	/* draw dungeon with updated npc positions */
 	dungeon_pc_los(&(g_state->dungeons[g_state->dungeon_index]), (Character*)(&(g_state->pc)), 1);
-	state_draw(*g_state, run_args.print_config.fill, run_args.print_config.color, 0);
+	state_draw(*g_state, run_args.print_config.fill, 0);
 	
 	if (!g_state->allow_move_npc && !g_state->allow_move_pc) { state_parse_input(g_state, NULL); }
-	
-	/* dequeue nodes, stopping at pc node */
-	while ((i < ((g_state->queue.index) + 1)) && !queue_is_empty(g_state->queue) && g_state->dungeons[g_state->dungeon_index].num_npcs_dead < g_state->dungeons[g_state->dungeon_index].num_npcs) {
-		
-		QueueNode node = queue_dequeue(&(g_state->queue));
-        node.priority = g_state->queue_position;
-		Character *wrapper = (Character*)(node.element);
-		if (!(wrapper->id)) {
+	else {
+		/* dequeue nodes, stopping at pc node */
+		while ((i < ((g_state->queue.index) + 1)) && !queue_is_empty(g_state->queue) && g_state->dungeons[g_state->dungeon_index].num_npcs_dead < g_state->dungeons[g_state->dungeon_index].num_npcs) {
 			
-			/* move pc */
-			if (g_state->allow_move_pc && wrapper->hp > 0) {
+			QueueNode node = queue_dequeue(&(g_state->queue));
+			node.priority = g_state->queue_position;
+			Character *wrapper = (Character*)(node.element);
+			if (!(wrapper->id)) {
 				
-				game_run = state_parse_input(g_state, wrapper);
-				queue_enqueue(&(g_state->queue), node);
+				/* move pc */
+				if (g_state->allow_move_pc && wrapper->hp > 0) {
+					
+					game_run = state_parse_input(g_state, wrapper);
+					queue_enqueue(&(g_state->queue), node);
+					
+					/* draw dungeon with updated npc positions */
+					state_draw(*g_state, run_args.print_config.fill, 0);
+					
+					(g_state->turn)++;
+				}
+			} else {
 				
-				/* draw dungeon with updated npc positions */
-				state_draw(*g_state, run_args.print_config.fill, run_args.print_config.color, 0);
-				
-				(g_state->turn)++;
-			}
-		} else {
-			
-			if (!g_state->allow_move_npc) { queue_enqueue(&(g_state->queue), node); }
-			else if (wrapper->hp > 0) {
+				if (!g_state->allow_move_npc) { queue_enqueue(&(g_state->queue), node); }
+				else if (wrapper->hp > 0) {
 
-				state_move_npc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, g_state->pc);
-				queue_enqueue(&(g_state->queue), node);
-				(g_state->turn)++;
+					state_move_npc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, g_state->pc);
+					queue_enqueue(&(g_state->queue), node);
+					(g_state->turn)++;
+				}
 			}
+			
+			(g_state->queue_position)++;
+			i++;
+			
+			if (game_run != 1) { break; }
 		}
-		
-        (g_state->queue_position)++;
-		i++;
-		
-		if (game_run != 1) { break; }
 	}
 	
 	return game_run;
@@ -193,7 +200,7 @@ int state_turn(GameState *g_state, RunArgs run_args) {
 int state_parse_input(GameState *g_state, Character *wrapper) {
 	
 	g_state->message = NULL;
-	
+	Coordinate next;
 	int move_matrix[2] = { 0, 0 };
 	
 	int key = getch();
@@ -230,10 +237,8 @@ int state_parse_input(GameState *g_state, Character *wrapper) {
 		}
 		
 		return 1;
-		break;
 	case 2:		// in pc warp menu
 		
-		Coordinate next;
 		g_state->allow_move_pc = 0;
 		g_state->allow_move_npc = 0;
 		switch(key) {
@@ -322,7 +327,6 @@ int state_parse_input(GameState *g_state, Character *wrapper) {
 		}
 		
 		return 1;
-		break;
 	default:	// in no menu
 		
 		g_state->allow_move_npc = 1;
@@ -449,13 +453,14 @@ int state_parse_input(GameState *g_state, Character *wrapper) {
 			
 			g_state->fog_enabled = !(g_state->fog_enabled);
 			g_state->allow_move_npc = 0;
+			g_state->allow_move_pc = 0;
 			break;
 		case 'g':			// enter pc warping menu
 			
 			g_state->cursor = g_state->pc.location;
+			g_state->menu_index = 2;
 			g_state->allow_move_npc = 0;
 			g_state->allow_move_pc = 0;
-			g_state->menu_index = 2;
 			return 2;
 			break;
 		case 'Q': 			// quit game
@@ -544,7 +549,6 @@ int state_parse_input(GameState *g_state, Character *wrapper) {
 		}
 		
 		return 1;
-		break;
 	}
 }
 
@@ -656,7 +660,7 @@ void state_increase_dungeon(GameState *g_state) {
 	
 	for (i = 0; i < g_state->dungeons[g_state->dungeon_index].num_staircases_down; i++) {
 		
-		if (coordinate_is_same(g_state->pc.location, g_state->dungeons[g_state->dungeon_index].staircases_down[i]->location)) {
+		if (g_state->dungeons[g_state->dungeon_index].staircases_down[i]->location.is_same(g_state->pc.location)) {
 			
 			stair_index = i;
 			break;
@@ -670,8 +674,8 @@ void state_increase_dungeon(GameState *g_state) {
 	
 	if (g_state->dungeon_index == g_state->num_dungeons_generated) {
 		
-		if (g_state->dungeon_index == ((g_state->num_dungeons)-1)) { g_state->dungeons[g_state->dungeon_index] = dungeon_init((uint8_t)DUNGEON_HEIGHT, (uint8_t)DUNGEON_WIDTH, num_npcs, num_stairs_up, 0, -1); }
-		else { g_state->dungeons[g_state->dungeon_index] = dungeon_init((uint8_t)DUNGEON_HEIGHT, (uint8_t)DUNGEON_WIDTH, num_npcs, num_stairs_up, 0, 0); }
+		if (g_state->dungeon_index == ((g_state->num_dungeons)-1)) { g_state->dungeons[g_state->dungeon_index] = Dungeon((uint8_t)DUNGEON_HEIGHT, (uint8_t)DUNGEON_WIDTH, num_npcs, num_stairs_up, 0, -1); }
+		else { g_state->dungeons[g_state->dungeon_index] = Dungeon((uint8_t)DUNGEON_HEIGHT, (uint8_t)DUNGEON_WIDTH, num_npcs, num_stairs_up, 0, 0); }
 		
 		(g_state->num_dungeons_generated)++;
 	}
@@ -691,7 +695,7 @@ void state_decrease_dungeon(GameState *g_state) {
 	
 	for (i = 0; i < g_state->dungeons[g_state->dungeon_index].num_staircases_up; i++) {
 		
-		if (coordinate_is_same(g_state->pc.location, g_state->dungeons[g_state->dungeon_index].staircases_up[i]->location)) {
+		if (g_state->dungeons[g_state->dungeon_index].staircases_up[i]->location.is_same(g_state->pc.location)) {
 			
 			stair_index = i;
 			break;
@@ -718,17 +722,17 @@ int state_contains_npcs(GameState *g_state) {
 	return 0;
 }
 
-void state_gameover(GameState *g_state, int print_fill, int print_color, int print_weight) {
+void state_gameover(GameState *g_state, int print_fill, int print_weight) {
 	
 	/* pc died */
-	if (g_state->pc.hp < 1) { state_draw_gameover_lose(*g_state, print_fill, print_color, print_weight); }
+	if (g_state->pc.hp < 1) { state_draw_gameover_lose(*g_state, print_fill, print_weight); }
 	/* all npcs in lowest-level dungeon are dead */
 	else if (g_state->num_dungeons_generated == g_state->num_dungeons && !dungeon_contains_npcs(&(g_state->dungeons[g_state->num_dungeons - 1]))) { state_draw_gameover_win(*g_state); }
 	
 	return;
 }
 
-void state_draw(GameState g_state, int print_fill, int print_color, int print_weight) {
+void state_draw(GameState g_state, int print_fill, int print_weight) {
 	
 	clear();
 	
@@ -742,11 +746,11 @@ void state_draw(GameState g_state, int print_fill, int print_color, int print_we
 		break;
 	case 2:
 		
-		state_draw_menu_warp(g_state, print_fill, print_color, print_weight);
+		state_draw_menu_warp(g_state, print_fill, print_weight);
 		break;
 	default:			//draw current dungeon
 		
-		state_draw_dungeon(g_state, print_fill, print_color, print_weight);
+		state_draw_dungeon(g_state, print_fill, print_weight);
 		break;
 	}
 	
@@ -755,12 +759,12 @@ void state_draw(GameState g_state, int print_fill, int print_color, int print_we
 	return;
 }
 
-void state_draw_dungeon(GameState g_state, int print_fill, int print_color, int print_weight) {
+void state_draw_dungeon(GameState g_state, int print_fill, int print_weight) {
 	
 	if (g_state.message) 	{ mvprintw(0, 0, "%s", g_state.message); }
 	else 					{ mvprintw(0, 0, "griffens -- hw 1.6", g_state.turn); }
 	
-	dungeon_draw(g_state.dungeons[g_state.dungeon_index], 1, 0, g_state.fog_enabled, print_fill, print_color, print_weight);
+	g_state.dungeons[g_state.dungeon_index].draw(1, 0, g_state.fog_enabled, print_fill, print_weight);
 	
 	mvprintw(22, 0, "PC location: (%d, %d)", g_state.pc.location.y, g_state.pc.location.x);
 	mvprintw(23, 0, "Turn [%d]   [%d] NPCs left in level [%d] of [%d]", g_state.turn, (g_state.dungeons[g_state.dungeon_index].num_npcs - g_state.dungeons[g_state.dungeon_index].num_npcs_dead), (g_state.dungeon_index+1), g_state.num_dungeons);
@@ -807,12 +811,12 @@ void state_draw_menu_npc(GameState g_state) {
 	return;
 }
 
-void state_draw_menu_warp(GameState g_state, int print_fill, int print_color, int print_weight) {
+void state_draw_menu_warp(GameState g_state, int print_fill, int print_weight) {
 	
 	if (g_state.message) 	{ mvprintw(0, 0, "%s", g_state.message); }
 	else 					{ mvprintw(0, 0, "PC warp mode", g_state.turn); }
 	
-	dungeon_draw(g_state.dungeons[g_state.dungeon_index], 1, 0, 0, print_fill, print_color, print_weight);
+	g_state.dungeons[g_state.dungeon_index].draw(1, 0, 0, print_fill, print_weight);
 	
 	init_pair(3, COLOR_BLUE, COLOR_BLACK);
 	attron(COLOR_PAIR(3));
@@ -843,13 +847,13 @@ void state_draw_gameover_win(GameState g_state) {
 	return;
 }
 
-void state_draw_gameover_lose(GameState g_state, int print_fill, int print_color, int print_weight) {
+void state_draw_gameover_lose(GameState g_state, int print_fill, int print_weight) {
 	
 	clear();
 	
 	mvprintw(0, 0, "GAME OVER", g_state.turn);
 	
-	dungeon_draw(g_state.dungeons[g_state.dungeon_index], 1, 0, 0, print_fill, print_color, print_weight);
+	g_state.dungeons[g_state.dungeon_index].draw(1, 0, 0, print_fill, print_weight);
 	
 	mvprintw(22, 0, "PC was defeated on turn [%d] having slain [%d] monsters in vain ... :(", g_state.turn, g_state.pc.num_kills);
 	mvprintw(23, 0, "Press ESC key to exit");

@@ -7,7 +7,7 @@
 #include "./cell.h"
 #include "./room.h"
 #include "./character.h"
-#include "./utils/queue.h"
+#include "../utils/classdef/queue.h"
 
 /********** definitions ***********/
 #define DUNGEON_HEIGHT 21
@@ -53,15 +53,16 @@ class Dungeon {
 		uint16_t num_npcs;
 		uint16_t num_npcs_dead;
 		NPC *npcs;
+		
+		/* CONSTRUCTORS */
+		Dungeon();
+		Dungeon(uint8_t dungeon_height, uint8_t dungeon_width, int dungeon_num_npcs, int dungeon_num_stairs_up, int dungeon_num_stairs_down, int dungeon_ommit_stairs);
+		
+		/* FUNCTIONS */
+		void draw(uint8_t offset_y, uint8_t offset_x, int print_fog, int print_fill, int print_weight);
 };
 
 /****** function declarations *****/
-Dungeon dungeon_init(uint8_t dungeon_height, uint8_t dungeon_width, int num_npcs, int num_stairs_up, int num_stairs_down, int ommit_stairs);
-
-void dungeon_finit(Dungeon *dungeon, uint8_t f_pc_y, uint8_t f_pc_x, uint8_t *f_cells, uint16_t f_num_rooms, uint8_t *f_rooms, uint16_t f_num_stairs_up, uint8_t *f_stairs_up, uint16_t f_num_stairs_down, uint8_t *f_stairs_down);
-
-void dungeon_mem_init(Dungeon *dungeon, uint8_t dungeon_height, uint8_t dungeon_width);
-
 void dungeon_generate_cells(Dungeon *dungeon);
 
 void dungeon_generate_rooms(Dungeon *dungeon);
@@ -93,8 +94,5 @@ void dungeon_pc_los(Dungeon *dungeon, Character *pc, uint8_t mark);
 void dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinate next);
 
 int dungeon_contains_npcs(Dungeon *dungeon);
-
-void dungeon_draw(Dungeon dungeon, uint8_t offset_y, uint8_t offset_x, int print_fog, int print_fill, int print_color, int print_weight);
-
 
 #endif /* DUNGEON_H */

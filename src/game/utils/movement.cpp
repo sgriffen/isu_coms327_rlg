@@ -2,7 +2,7 @@
 #include <stdlib.h>
 /******* include custom libs ******/
 #include "./movement.h"
-#include "./math_utils.h"
+#include "../../utils/math_utils.h"
 
 /********** definitions **********/
 #define MAX_ROOM_ITERS 100
@@ -25,7 +25,7 @@ Coordinate move_away(Dungeon *dungeon, Coordinate start, Coordinate end, int avo
     else if (start.x > end.x) 	{ next.x = start.x + 1; }
     else                        { next.x = start.x; }
 
-    if ((avoid_npc && cell_contains_npc(dungeon->cells[next.y][next.x])) || immutable(dungeon->cells[next.y][next.x]) || coordinate_is_same(next, start)) { next = move_rand(dungeon, start, avoid_npc, immutable); }
+    if ((avoid_npc && cell_contains_npc(dungeon->cells[next.y][next.x])) || immutable(dungeon->cells[next.y][next.x]) || start.is_same(next)) { next = move_rand(dungeon, start, avoid_npc, immutable); }
 
     return next;
 }
@@ -44,7 +44,7 @@ Coordinate move_towards(Dungeon *dungeon, Coordinate start, Coordinate end, int 
 	else if (start.x > end.x) 	{ next.x = start.x - 1; }
     else                        { next.x = start.x; }
 
-    if ((avoid_npc && cell_contains_npc(dungeon->cells[next.y][next.x])) || immutable(dungeon->cells[next.y][next.x]) || coordinate_is_same(next, start)) { next = move_rand(dungeon, start, avoid_npc, immutable); }
+    if ((avoid_npc && cell_contains_npc(dungeon->cells[next.y][next.x])) || immutable(dungeon->cells[next.y][next.x]) || start.is_same(next)) { next = move_rand(dungeon, start, avoid_npc, immutable); }
 
 	return next;
 }
@@ -297,7 +297,7 @@ Coordinate move_npc1(Dungeon *dungeon, NPC *npc, Coordinate reference) {
 		npc->pc_last_known = reference;
         return move_min_ntunneling(dungeon, npc->location, 1);
 	}
-    else if (coordinate_is_same(npc->pc_last_known, npc->location)) {
+    else if (npc->location.is_same(npc->pc_last_known)) {
 
         npc->pc_last_known.y = 0;
         npc->pc_last_known.x = 0;
@@ -362,7 +362,7 @@ Coordinate move_npc5(Dungeon *dungeon, NPC *npc, Coordinate reference) {
         npc->pc_last_known = reference;
         return move_min_tunneling(dungeon, npc->location, 1);
     }
-    else if (coordinate_is_same(npc->pc_last_known, npc->location)) {
+    else if (npc->location.is_same(npc->pc_last_known)) {
 
         npc->pc_last_known.y = 0;
         npc->pc_last_known.x = 0;

@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 /******* include custom libs ******/
-#include "pathfinder.h"
+#include "./pathfinder.h"
 
 /********** definitions **********/
 #define QUEUE_MAX_SIZE 1700
@@ -27,8 +27,8 @@ void pathfinder_rewind(Dungeon *dungeon, Coordinate *start, Coordinate *end, int
 			
 			if (!cell_immutable_tunneling(dungeon->cells[i][j])) {
 				
-				if (coordinate_is_same(dungeon->cells[i][j].location, *start)) 	{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), CELL_HARDNESS_MIN)); }
-				else 															{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), UINT16_MAX)); }
+				if (start->is_same(dungeon->cells[i][j].location)) 	{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), CELL_HARDNESS_MIN)); }
+				else 												{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), UINT16_MAX)); }
 				
 //				printf("-- debug -- adding to queue y:[%d] x:[%d]\n", dungeon->cells[i][j].location.y, dungeon->cells[i][j].location.x);
 			}
@@ -59,7 +59,7 @@ void pathfinder_rewind(Dungeon *dungeon, Coordinate *start, Coordinate *end, int
 		traversed[num_traversed] = node;
 		num_traversed++;
 		
-		if (coordinate_is_same(*loc, *end)) {
+		if (end->is_same(*loc)) {
 			
 			end_found = 1;
 			break;
@@ -104,8 +104,8 @@ void pathfinder_ntunneling(Dungeon *dungeon, Coordinate *start) {
 			
 			if (!cell_immutable_ntunneling(dungeon->cells[i][j])) {
 				
-				if (coordinate_is_same(dungeon->cells[i][j].location, *start)) 	{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), CELL_HARDNESS_MIN)); }
-				else 															{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), UINT16_MAX)); }
+				if (start->is_same(dungeon->cells[i][j].location)) 	{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), CELL_HARDNESS_MIN)); }
+				else 												{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), UINT16_MAX)); }
 				
 //				printf("-- debug -- adding to queue y:[%d] x:[%d]\n", dungeon->cells[i][j].location.y, dungeon->cells[i][j].location.x);
 			}
@@ -154,8 +154,8 @@ void pathfinder_tunneling(Dungeon *dungeon, Coordinate *start) {
 			
 			if (!cell_immutable_tunneling(dungeon->cells[i][j])) {
 				
-				if (coordinate_is_same(dungeon->cells[i][j].location, *start)) 	{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), CELL_HARDNESS_MIN)); }
-				else 															{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), UINT16_MAX)); }
+				if (start->is_same(dungeon->cells[i][j].location)) 	{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), CELL_HARDNESS_MIN)); }
+				else 												{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), UINT16_MAX)); }
 				
 //				printf("-- debug -- adding to queue y:[%d] x:[%d]\n", dungeon->cells[i][j].location.y, dungeon->cells[i][j].location.x);
 			}
