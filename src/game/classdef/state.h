@@ -1,3 +1,4 @@
+#include <string>
 #include <vector>
 
 #include <stdint.h>
@@ -49,7 +50,7 @@ class GameState {
 		
 		Coordinate cursor;
 		
-		char *message;
+		std::string message;
 		
 		/* CONSTRUCTORS */
 		GameState();

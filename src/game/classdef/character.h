@@ -1,4 +1,6 @@
 #include <iostream>
+#include <string>
+
 #include <stdint.h>
 #include <type_traits>
 #include <ncurses.h>
@@ -27,8 +29,8 @@ class Character {
 		Coordinate prev_location;
 		
 		uint32_t id;
-		char *name;
-		char *description;
+		std::string name;
+		std::string description;
 		char symbol;
 		
 		uint8_t speed;
@@ -39,7 +41,7 @@ class Character {
 		/* CONSTRUCTORS */
 		Character();
 		Character(uint32_t character_id, Coordinate character_loc, uint16_t character_hp, uint16_t character_damage, uint8_t character_speed);
-		Character(char *character_name, char *character_description, char character_symbol, uint8_t character_color, uint32_t character_id, Coordinate character_loc, uint16_t character_hp, uint16_t character_damage, uint8_t character_speed);
+		Character(std::string character_name, std::string character_description, char character_symbol, uint8_t character_color, uint32_t character_id, Coordinate character_loc, uint16_t character_hp, uint16_t character_damage, uint8_t character_speed);
 
 		/* FUNCTIONS */
 		void draw(uint8_t print_y, uint8_t print_x, int print_fill);
@@ -55,7 +57,7 @@ class PC : public Character {
 		/* CONSTRUCTORS */
 		PC();
 		PC(Coordinate pc_loc, uint16_t pc_hp, uint16_t pc_damage, uint8_t pc_speed);
-		PC(char *pc_name, char *pc_description, char pc_symbol, uint8_t pc_color, Coordinate pc_loc, uint16_t pc_hp, uint16_t pc_damage, uint8_t pc_speed);
+		PC(std::string pc_name, std::string pc_description, char pc_symbol, uint8_t pc_color, Coordinate pc_loc, uint16_t pc_hp, uint16_t pc_damage, uint8_t pc_speed);
 
 		/* FUNCTIONS */
 		
@@ -71,7 +73,7 @@ class NPC : public Character {
 		/* CONSTRUCTORS */
 		NPC();
 		NPC(uint32_t npc_id, Coordinate npc_loc, uint16_t npc_hp, uint16_t npc_type, uint16_t npc_damage, uint8_t npc_speed);
-		NPC(uint8_t npc_rarity, char *npc_name, char *npc_description, char npc_symbol, uint8_t npc_color, uint32_t npc_id, Coordinate npc_loc, uint16_t npc_hp, uint16_t npc_type, uint16_t npc_damage, uint8_t npc_speed);
+		NPC(uint8_t npc_rarity, std::string npc_name, std::string npc_description, char npc_symbol, uint8_t npc_color, uint32_t npc_id, Coordinate npc_loc, uint16_t npc_hp, uint16_t npc_type, uint16_t npc_damage, uint8_t npc_speed);
 
 		/* FUNCTIONS */
 		

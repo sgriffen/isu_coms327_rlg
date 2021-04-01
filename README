@@ -1,97 +1,67 @@
 Sean Griffen (griffens)
 
 
-This is my solution to homework 1.06, "Fog of War" and porting to C++.
-All the structs that were defined in asssignment 1.05 have been converted to C++ classes, and all .c files have been renamed to .cpp
-It generates a random number of dungeons that are persistent as the pc moves up and down staircases. 
-Individual dungeons in the whole "game state" are the same as previous assignments, save the first and last dungeon. In the first dungeon generated, there are only down staircases, because there are no dungeons above this level. Similarly for the last dungeon, there are no up staircases because it is the lowest level for the game.
-For a player to win, they must traverse to the last dungeon (lowest level) and defeat all the monsters in it (pretty easy with teleportation, lol)
-The number of dungeons and npcs in those dungeons can be specified using the command arguments below,
+This is my solution to homework 1.07, "Parsing Monster Definitions" and optionally "Parsing Item Definitions".
+This implentation does parse both npcs and items stores them into two vectors (one for npcs, one for items), and will eventually pass those two vectors into the GameState object to generate the dungeons later.
+As of right now, the two vectors are printed after parsing is complete, showing what has been parsed from the files, per the assignment requirements
 
 Things to note:
-	- A cell denoted as a Rock is printed as ' '
-	- A cell denoted as a Room is printed as '.'
-	- A cell denoted as a cooridor is printed as '#'
-	- A cell denoted as a up staircase is printed as '<'
-	- A cell denoted as a down staircase is printed as '>'
-	- A cell containing the PC is printed as '@' with the color 'green' if the color option is selected
-	- A cell containing an npc is printed as the type of that npc with the color 'red' if the color option is selected
-	- Accessing 'warp' mode and the FOW toggle are mapped to the defiend controlls on the keyboard
-	- The warp point when in that mode is denoted as a blue '*'
-		- Warp starting point is where PC is
-	- FOW does not save previously seen character positions (yet) 
-	- The PC is controlled using the given previous assignement constraints
-		- If, when moving diagonally, the pc can't move in both directions, it will move in the direction it can
-	- Depending on the number of npcs defined, it can take a while for the next pc turn to take place
-	- By far, the slowest part of each turn cycle is generating the shortest paths (non-tunneling and tunneling) to the pc after it moves. I'm not sure how best to make this faster using my priority queue implemtaiton in queue.c, queue.h, and path alrorithms in pathfinder.c, so any suggestions would be helpful.
-		- So far, I've been relatively successful in using my own code without looking at the professors, so I'd like to solve this issue using what I have.
-		- The port to C++ didn't really help the speed much, but I know there's some optimizations I can make with the class structures now, and I just haven't yet
+	- There is no gameplay per the assignmebt requirements. Only the parsed NPC and Item lists are printed
+	- An NPC's configuration is printed in the following order:
+		- name
+		- description
+		- symbol
+		- color
+		- speed
+		- abilities
+		- hitpoints
+		- attack damage
+		- rarity
+	- An Item's configuration is printed in the following order:
+		- name
+		- description
+		- type
+		- color
+		- value
+		- weight
+		- attribute
+		- speed bonus
+		- defense bonus
+		- damage bonus
+		- hit bonus
+		- dodge bonus
+		- artifact status
+		- rarity
+	- To get the home directory, getenv("HOME") is called
+	- The parsing functions 'rouge_parse_npc()' and 'rouge_parse_item()' can be found in main.cpp. These functions are called in the main.cpp function 'rouge_init()'
+	- The NPC print function 'print()' can be found in src/game/NPC_Template.cpp
+	- The Item print function 'print()' can be found in src/game/Item_Template.cpp
 
-NPC type descriptions:
-	- Type 0:
-		- npc is unintelligent, non-telepathic, non-tunneling, and predictable
-			it randomly selectes a direction and moves in a straight line in that direction until it meets a cell that's immutable or a wall
-			at which point it thinks hard for a turn and picks a random direction and continues in a straight line
-	- Type 1:
-		- npc is intelligent, non-telepathic, non-tunneling, and predictable
-			it wanders like npc_0 until it sees the pc, then takes the shortest, non-tunneling path to it
-			if it cannot see the pc, and it has seen the pc already, it takes the shortest path to the pc's last known location
-			after it reaches said location without seeing the player, it goes back to wandering
-			it also intentionally avoids cells other npcs occupy as to not kill them
-	- Type 2:
-		- npc is unintelligent, telepathic, non-tunneling, and predictable
-			it moves towards the player, not necessarily taking the shortest path, excluding immutable and wall cells
-	- Type 3:
-		- npc is intelligent, telepathic, non-tunneling, and predictable
-			it moves towards the player constantly, always taking the shortest non-tunneling path
-			it also intentionally avoids cells other npcs occupy as to not kill them
-	- Type 4:
-		- npc is unintelligent, non-telepathic, tunneling, and predictable
-			it moves like npc_0, but it can tunnel through walls
-			if left alone long enough, this npc will eventually make every cell not immutable and not a room a cooridor
-	- Type 5:
-		- npc is intelligent, non-telepathic, tunneling, and predictable
-			it wanders like npc_3 until it sees the pc, then takes the shortest path to it
-			if it cannot see the pc, and it has already seen the pc, it takes the shortest path to the pc's last known location
-			after it reaches said location without seeing the player, it goes back to wandering
-			it also intentionally avoids cells other npcs occupy as to not kill them
-	- Type 6:
-		- npc is unintelligent, telepathic, tunneling, and predictable
-			it moves towards the player, not necessarily taking the shortest path, excluding immutable cells
-			it always tries to bring the delta y and delta x between it and the player to 0; if both already are 0, it acts like a CASE_0 npc
-	- Type 7:
-		- npc is intelligent, telepathic, tunneling, and predictable
-			it moves towards the player constantly, always taking the shortest path
-			it also intentionally avoids cells other npcs occupy as to not kill them
-	- Type 8:
-		- npc is intelligent, non-telepathic, non-tunneling, and eradic
-			it has a 50% chance of being a type_0 npc, or randomly moving to a room/cooridor cell next to it
-	- Type 9:
-		- npc is unintelligent, telepathic, non-tunneling, and eradic
-			it has a 50% chance of being a type_1 npc, or randomly moving to a room/cooridor cell next to it
-	- Type A:
-		- npc is unintelligent, telepathic, non-tunneling, and eradic
-			it has a 50% chance of being a type_2 npc, or randomly moving to a room/cooridor cell next to it
-	- Type B:
-		- npc is intelligent, telepathic, non-tunneling, and eradic
-			it has a 50% chance of being a type_3 npc, or randomly moving to a room/cooridor cell next to it
-	- Type C:
-		- npc is unintelligent, non-telepathic, tunneling, and eradic
-			it has a 50% chance of being a type_4 npc, or randomly moving to any cell (besides immutable ones)
-	- Type D:
-		- npc is intelligent, non-telepathic, tunneling, and eradic
-			it has a 50% chance of being a type_5 npc, or randomly moving to any cell (besides immutable ones)
-	- Type E:
-		- npc is unintelligent, telepathic, tunneling, and eradic
-			it has a 50% change of being a type_6 npc, or randomly moving to any cell (besides immutable ones)
-	- Type F:
-		- npc is intelligent, telepathic, tunneling, and eradic
-			it has a 50% chance of being a type_7 npc, or randomly moving to any cell (besides immutable ones)
 
-To run the program, run the Makefile, and enter './rouge.o'. The valid command arguments are defined as follows:
+To run the program, run the Makefile, and enter './rlg'. The valid command arguments are defined as follows:
 	It is assummed that an argument is precedded with a "--" and arguments have no such prefix. 
 	A '|' means that the flags/arguments that are involved are never entered at the same time. Pick 1 flag/argument to enter
 	Ignore '<>' characters when entering arguments in the command window:
+	- Specify npc config file
+		- flag: config-npc | c-npc
+		- arguments: <filepath.txt>
+		- description: Specify a .txt file to load the npc template configurations from
+		- notes: 
+			- If the file is in the same directory as main.cpp, then <filepath> can be relative to main.cpp
+			- Otherwise, <filepath> must be the absolute path to the file.
+			- File parsing is assumed to be a .txt file
+		- default behavior: Item configuration is loaded from ~/monster_desc.txt
+		- example command: --c-npc "configs/templates/npcs.txt"
+	- Specify item config file
+		- flag: config-item | c-item
+		- arguments: <filepath.txt>
+		- description: Specify a .txt file to load the item template configurations from
+		- notes: 
+			- If the file is in the same directory as main.cpp, then <filepath> can be relative to main.cpp
+			- Otherwise, <filepath> must be the absolute path to the file.
+			- File parsing is assumed to be a .txt file
+		- default behavior: Item configuration is loaded from ~/object_desc.txt
+		- example command: --c-item "configs/templates/items.txt"
 	- Print dungeon mod:
 		- flag: print | p
 		- arguments: <b | f>
@@ -101,13 +71,6 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 		- notes: 
 		- default behavior: Printing follows required specification
 		- example command: --border f
-	- Print color:
-		- flag: color
-		- arguments:
-		- description: Prints the PC in green and NPCs in various colors based on type
-		- notes: Only PC and NPCs are printed in color
-		- default behavior: Nothing is printed with color
-		- example command: --color
 	- Number of npcs to generate per level
 		- flag: nummon | nm
 		- arguments: <uint>
@@ -129,4 +92,4 @@ To run the program, run the Makefile, and enter './rouge.o'. The valid command a
 	
 
 A command to run this application with all arguments defined may look as follows:
-	./rouge.o [<--print | --p> <b | f>] [--color] [<--nummmon | --nm> <uint>] [<--numdun | --nd> <uint>]
+	./rlg [<--config-npc | --c-npc> <filepath.txt>] [<--config-item | --c-item> <filepath.txt>] [<--print | --p> <b | f>] [<--nummmon | --nm> <uint>] [<--numdun | --nd> <uint>]

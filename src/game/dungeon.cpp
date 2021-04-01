@@ -101,31 +101,6 @@ void Dungeon::draw(uint8_t offset_y, uint8_t offset_x, int print_fog, int print_
 	return;
 }
 
-//Dungeon dungeon_init(uint8_t dungeon_height, uint8_t dungeon_width, int num_npcs, int num_stairs_up, int num_stairs_down, int ommit_stairs) {
-//	
-//	int dungeon_area = dungeon_height * dungeon_width;
-//	
-//	Dungeon dungeon;
-//
-//	/* initialize dungeon cells */
-//  dungeon_generate_cells(&dungeon);
-//	
-//	/* generate and sort rooms */
-//	dungeon_generate_rooms(&dungeon);
-//	
-//	/* generate cooridors */
-//	dungeon_generate_cooridors(&dungeon);
-//	
-//	/* add staircases */
-//	dungeon_generate_staircases(&dungeon, num_stairs_up, num_stairs_down, ommit_stairs);
-//	
-//	/* add pc and npcs */
-//	dungeon_generate_pc(dungeon);
-//	dungeon_generate_npcs(&dungeon, num_npcs);
-//	
-//	return dungeon;
-//}
-
 void dungeon_generate_cells(Dungeon *dungeon) {
 	
 	int i = 0, j = 0;

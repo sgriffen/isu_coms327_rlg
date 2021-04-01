@@ -27,7 +27,7 @@ GameState::GameState() {
 	dungeon_index 			= 0;
 	num_dungeons 			= 0;
 	num_dungeons_generated 	= 0;
-	message 				= NULL;
+	message 				= "";
 	turn 					= 0;
 	fog_enabled 			= 1;
 	cursor.y 				= 0;
@@ -63,7 +63,7 @@ void state_init_pc(GameState *g_state) {
 	loc.y = (uint8_t)utils_rand_between(g_state->dungeons[0].rooms[0].tl.y+ROOM_BORDER_WIDTH, g_state->dungeons[0].rooms[0].br.y-ROOM_BORDER_WIDTH, NULL);
 	loc.x = (uint8_t)utils_rand_between(g_state->dungeons[0].rooms[0].tl.x+ROOM_BORDER_WIDTH, g_state->dungeons[0].rooms[0].br.x-ROOM_BORDER_WIDTH, NULL);
 	
-	g_state->pc = PC((char*)"Hero", (char*)"Our only hope!", '@', PAIR_GREEN, loc, 1, 1, PC_SPEED);
+	g_state->pc = PC("Hero", "Our only hope!", '@', PAIR_GREEN, loc, 1, 1, PC_SPEED);
 	
 	return;
 }
@@ -199,7 +199,7 @@ int state_turn(GameState *g_state, RunArgs run_args) {
 
 int state_parse_input(GameState *g_state, Character *wrapper) {
 	
-	g_state->message = NULL;
+	g_state->message = "";
 	Coordinate next;
 	int move_matrix[2] = { 0, 0 };
 	
@@ -338,99 +338,63 @@ int state_parse_input(GameState *g_state, Character *wrapper) {
 			
 			move_matrix[0] = -1;
 			move_matrix[1] = 0;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
-				
-				g_state->message = (char*)calloc(strlen("Could not move PC up")+1, sizeof(char));
-				printf((g_state->message), "Could not move PC up");
-			}
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) { g_state->message.assign("Could not move PC up"); }
 			break;
 		case KEY_PPAGE:		// pc move up-right
 			CASE_MOVE_UR:
 			
 			move_matrix[0] = -1;
 			move_matrix[1] = 1;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
-				
-				g_state->message = (char*)calloc(strlen("Could not move PC up-right")+1, sizeof(char));
-				sprintf((g_state->message), "Could not move PC up-right");
-			}
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) { g_state->message.assign("Could not move PC up-right"); }
 			break;
 		case KEY_RIGHT:		// pc move right
 			CASE_MOVE_R:
 			
 			move_matrix[0] = 0;
 			move_matrix[1] = 1;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
-				
-				g_state->message = (char*)calloc(strlen("Could not move PC right")+1, sizeof(char));
-				sprintf((g_state->message), "Could not move PC right");
-			}
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) { g_state->message.assign("Could not move PC right"); }
 			break;
 		case KEY_NPAGE:		// pc move down-right
 			CASE_MOVE_DR:
 			
 			move_matrix[0] = 1;
 			move_matrix[1] = 1;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
-				
-				g_state->message = (char*)calloc(strlen("Could not move PC down-right")+1, sizeof(char));
-				sprintf((g_state->message), "Could not move PC down-right");
-			}
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) { g_state->message.assign("Could not move PC down-right"); }
 			break;
 		case KEY_DOWN:		// pc move down
 			CASE_MOVE_D:
 			
 			move_matrix[0] = 1;
 			move_matrix[1] = 0;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
-				
-				g_state->message = (char*)calloc(strlen("Could not move PC down")+1, sizeof(char));
-				sprintf((g_state->message), "Could not move PC down");
-			}
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) { g_state->message.assign("Could not move PC down"); }
 			break;
 		case KEY_END:		// pc move down-left
 			CASE_MOVE_DL:
 			
 			move_matrix[0] = 1;
 			move_matrix[1] = -1;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
-				
-				g_state->message = (char*)calloc(strlen("Could not move PC down-left")+1, sizeof(char));
-				sprintf((g_state->message), "Could not move PC down-left");
-			}
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) { g_state->message.assign("Could not move PC down-left"); }
 			break;
 		case KEY_LEFT:		// pc move left
 			CASE_MOVE_L:
 			
 			move_matrix[0] = 0;
 			move_matrix[1] = -1;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
-				
-				g_state->message = (char*)calloc(strlen("Could not move PC left")+1, sizeof(char));
-				sprintf((g_state->message), "Could not move PC left");
-			}
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) { g_state->message.assign("Could not move PC left"); }
 			break;
 		case KEY_HOME:		// pc move up-left
 			CASE_MOVE_UL:
 			
 			move_matrix[0] = -1;
 			move_matrix[1] = -1;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
-				
-				g_state->message = (char*)calloc(strlen("Could not move PC up-left")+1, sizeof(char));
-				printf((g_state->message), "Could not move PC up-left");
-			}
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) { g_state->message.assign("Could not move PC up-left"); }
 			break;
 		case KEY_B2:		// pc rest
 			CASE_MOVE_REST:
 			
 			move_matrix[0] = 0;
 			move_matrix[1] = 0;
-			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) {
-				
-				g_state->message = (char*)calloc(strlen("Could not let PC rest")+1, sizeof(char));
-				sprintf((g_state->message), "Could not let PC rest");
-			}
+			if (!state_move_pc(&(g_state->dungeons[g_state->dungeon_index]), wrapper, move_matrix)) { g_state->message.assign("Could not let PC rest"); }
 			break;
 		case '<':			// pc go up staircase
 			
@@ -543,8 +507,9 @@ int state_parse_input(GameState *g_state, Character *wrapper) {
 			break;
 		default: 
 			
-			g_state->message = (char*)calloc(strlen("Unknown key pressed: %o")+1, sizeof(char));
-			sprintf((g_state->message), "Unknown key pressed: %o", key);
+			g_state->message.assign("Unknown key pressed");
+			g_state->allow_move_npc = 0;
+			g_state->allow_move_pc = 0;
 			break; 	//no-op entered, do nothing
 		}
 		
@@ -761,8 +726,8 @@ void state_draw(GameState g_state, int print_fill, int print_weight) {
 
 void state_draw_dungeon(GameState g_state, int print_fill, int print_weight) {
 	
-	if (g_state.message) 	{ mvprintw(0, 0, "%s", g_state.message); }
-	else 					{ mvprintw(0, 0, "griffens -- hw 1.6", g_state.turn); }
+	if (g_state.message.size() > 0) { mvprintw(0, 0, "%s", g_state.message); }
+	else 							{ mvprintw(0, 0, "griffens -- hw 1.6", g_state.turn); }
 	
 	g_state.dungeons[g_state.dungeon_index].draw(1, 0, g_state.fog_enabled, print_fill, print_weight);
 	
@@ -813,8 +778,8 @@ void state_draw_menu_npc(GameState g_state) {
 
 void state_draw_menu_warp(GameState g_state, int print_fill, int print_weight) {
 	
-	if (g_state.message) 	{ mvprintw(0, 0, "%s", g_state.message); }
-	else 					{ mvprintw(0, 0, "PC warp mode", g_state.turn); }
+	if (g_state.message.size() > 0) { mvprintw(0, 0, "%s", g_state.message); }
+	else 							{ mvprintw(0, 0, "PC warp mode", g_state.turn); }
 	
 	g_state.dungeons[g_state.dungeon_index].draw(1, 0, 0, print_fill, print_weight);
 	

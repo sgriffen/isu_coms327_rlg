@@ -56,6 +56,10 @@ void args_parse(int argc, char *argv[], RunArgs *run_args) {
 	
 	for (i = 1; i < argc; i++) {
 		
+		if (!strcmp(argv[i], "--config-npc") || !strcmp(argv[i], "--c-npc")) { run_args->config_npc.assign(argv[i+1]); } //define absolute path to file to read npc config from 
+		
+		if (!strcmp(argv[i], "--config-item") || !strcmp(argv[i], "--c-item")) { run_args->config_item.assign(argv[i+1]); } //define absolute path to file to read item config from
+		
 		if (i+1 < argc && (!strcmp(argv[i], "--print") || !strcmp(argv[i], "--p"))) { //print a (dungeons border) or (filled-in walls and empty rooms)
 			
 			if (!strcmp(argv[i+1], "b")) 		{ run_args->print_config.fill = 1; } //print (dungeons border)
@@ -63,11 +67,7 @@ void args_parse(int argc, char *argv[], RunArgs *run_args) {
 		}		
 		if (!strcmp(argv[i], "--nummon") || !strcmp(argv[i], "--nm")) { run_args->num_npcs = atoi(argv[i+1]); } //define number of npcs per dungeons
 		
-		if (!strcmp(argv[i], "--numdun") || !strcmp(argv[i], "--nd")) { run_args->num_dungeons = atoi(argv[i+1]); } //define number dungeons
-		
-		if (!strcmp(argv[i], "--config-npc") || !strcmp(argv[i], "--c-npc")) { run_args->config_npc.assign(argv[i+1]); } //define absolute path to file to read npc config from 
-		
-		if (!strcmp(argv[i], "--config-item") || !strcmp(argv[i], "--c-item")) { run_args->config_item.assign(argv[i+1]); } //define absolute path to file to read item config from 
+		if (!strcmp(argv[i], "--numdun") || !strcmp(argv[i], "--nd")) { run_args->num_dungeons = atoi(argv[i+1]); } //define number dungeons 
 	}
 	
 	if (!(run_args->num_dungeons)) { run_args->num_dungeons = utils_rand_between(2, 10, NULL); }
@@ -83,12 +83,16 @@ void rouge_init(GameState *g_state, char *argv[], RunArgs run_args) {
 	std::vector<Item_Template>::iterator it_item;
 	std::vector<Item_Template> item_templates = rouge_parse_item(run_args.config_item);
 	
+	std::cout << "-------------------- DEFINED NPCS --------------------" << std::endl << std::endl;
 	for (it_npc = npc_templates.begin(); it_npc != npc_templates.end(); it_npc++) {
 		
 		it_npc->print();
 		std::cout << std::endl;
 	}
+	
 	std::cout << std::endl;
+	
+	std::cout << "------------------- DEFINED ITEMS --------------------" <<std::endl << std::endl;
 	for (it_item = item_templates.begin(); it_item != item_templates.end(); it_item++) {
 		
 		it_item->print();
@@ -123,8 +127,6 @@ void rouge_init_terminal() {
 
 void rouge_clean(GameState *g_state, char *argv[], RunArgs run_args) {
 	
-//	if (run_args.file_save) { fwrite_dungeons(*dungeons, run_args.save_dir); }
-	
 	free(g_state->dungeons);
 	rouge_clean_terminal();
 	
@@ -153,13 +155,17 @@ std::vector<NPC_Template> rouge_parse_npc(std::string filename) {
 		while (std::getline(file, line)) {
 			if (line.size() > 0) {
 				
+				if (line[line.size()-1] == '\r') { line = line.substr(0, line.size()-1); }
 				std::vector<std::string> line_splt = strsplit(line, " ");
 				if (!f_npc_desc) {
 					
-					if (!f_linecount && line.compare("RLG327 MONSTER DESCRIPTION 1")) {
+					if (!f_linecount) {
+					
+						if (line.compare("RLG327 MONSTER DESCRIPTION 1")) {
 						
-						std::cout << "NPC configuration file version invalid" << std::endl;
-						break;
+							std::cout << "NPC configuration file version invalid" << std::endl;
+							break;
+						}
 					}
 					if (!line.compare("BEGIN MONSTER")) { npc_templates.push_back(NPC_Template()); }
 					else if (!line.compare("END")) {
@@ -288,6 +294,7 @@ std::vector<Item_Template> rouge_parse_item(std::string filename) {
 		while (std::getline(file, line)) {
 			if (line.size() > 0) {
 				
+				if (line[line.size()-1] == '\r') { line = line.substr(0, line.size()-1); }
 				std::vector<std::string> line_splt = strsplit(line, " ");
 				if (!f_item_desc) {
 					
