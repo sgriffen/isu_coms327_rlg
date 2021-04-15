@@ -1,3 +1,5 @@
+#include <vector>
+
 #include <stdint.h>
 
 #ifndef CELL_H
@@ -5,6 +7,7 @@
 
 #include "./coordinate.h"
 #include "./character.h"
+#include "./item.h"
 #include "../../res/config.h"
 
 /********** definitions ***********/
@@ -36,6 +39,8 @@ class Cell {
 		CellType type_current;
 		Character *character;
 		
+		std::vector<Item*> items;
+		
 		uint8_t visited;
 		uint8_t visible;
 		int meta_data;
@@ -58,6 +63,8 @@ int cell_immutable_tunneling(Cell cell);
 PC* cell_contains_pc(Cell cell);
 
 NPC* cell_contains_npc(Cell cell);
+
+std::vector<Item*>* cell_contains_items(Cell cell);
 
 void cell_draw(Cell cell, uint8_t y, uint8_t x, int print_fog, int print_fill, int print_color, int print_weight);
 

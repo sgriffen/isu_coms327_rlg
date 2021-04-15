@@ -24,6 +24,7 @@ class Coordinate{
 		/* CONSTRUCTORS */
 		Coordinate();
 		Coordinate(uint8_t coordinate_y, uint8_t coordinate_x);
+		Coordinate(const Coordinate &rhs);
 		
 		/* FUNCTIONS */
 		int is_same(Coordinate beta);

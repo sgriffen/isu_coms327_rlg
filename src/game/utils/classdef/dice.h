@@ -27,6 +27,7 @@ class Dice {
 		
 		/* FUNCTIONS */
 		uint32_t roll();
+		std::string to_string();
 		void print();
 };
 

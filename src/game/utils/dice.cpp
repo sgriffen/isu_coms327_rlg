@@ -3,10 +3,12 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 /******* include custom libs ******/
 #include "./classdef/dice.h"
 #include "../../utils/str_utils.h"
+#include "../../utils/math_utils.h"
 
 /********** definitions **********/
 
@@ -43,7 +45,23 @@ Dice::Dice(std::string dice_str) : Dice() {
 /****** function definitions ******/
 uint32_t Dice::roll() {
 	
-	return 0;
+	uint32_t i;
+	uint32_t roll = 0;
+	
+	for (i = 0; i < num_dice; i++) { roll += (uint32_t)utils_rand_between(1, num_sides); }
+	
+	return base + roll;
+}
+
+std::string Dice::to_string() {
+	
+	std::string str = std::to_string(base);
+	str.append("+");
+	str.append(std::to_string(num_dice));
+	str.append("d");
+	str.append(std::to_string(num_sides));
+	
+	return str;
 }
 
 void Dice::print() {

@@ -15,6 +15,7 @@ Cell::Cell() {
 	type_next 			= CellType_Wall;
 	type_current 		= CellType_Wall;
 	character 			= NULL;
+	items				= std::vector<Item*>();
 	visited 			= 0;
 	visible 			= 0;
 	meta_data 			= -1;
@@ -35,33 +36,43 @@ void Cell::draw(uint8_t print_y, uint8_t print_x, int print_fog, int print_fill,
 	if (print_weight == 1) {
 		
 		if (character && character->hp > 0) { character->draw(print_y, print_x, 1); }
+		else if (items.size()) {
+			
+			if (items.size() > 1) { mvprintw(print_y, print_x, "%2c", '&'); }
+			else { items[0]->draw(print_y, print_x, 0); }
+		}
 	}
 	else {
 		
-		if (cell_immutable_ntunneling(*(this))) {
-			
-			if (print_weight == 4) 		{ mvaddch(print_y, print_x, 'X'); }										//print cell traversal cost
-			else if (print_fill == 1) 	{
-				
-				if (location.y == 0 || location.y == DUNGEON_HEIGHT-1) 	{ mvaddch(print_y, print_x, '-'); } //print as horizontal line
-				else 													{ mvaddch(print_y, print_x, '|'); } //print as vertical line
-			}
-			else if (print_fill == 2) 	{ mvprintw(print_y, print_x, "%s", "\u2588"); } 	//print as solid block
-			else 						{ mvaddch(print_y, print_x, ' '); }
-		}
-		else if (print_fog && !visited) {
+		if (print_fog && !visited) {
 			
 			mvaddch(print_y, print_x, ' ');
 			return;
+		}
+		if (cell_immutable_tunneling(*(this))) {
+			
+			if (print_weight == 4) 		{ mvaddch(print_y, print_x, 'X'); }									//print cell traversal cost
+			else if (print_fill == 1) 	{
+				
+				if (location.y == 0 || location.y == DUNGEON_HEIGHT-1) 		{ mvaddch(print_y, print_x, '-'); } //print as horizontal line
+				else if (location.x == 0 || location.x == DUNGEON_WIDTH-1)	{ mvaddch(print_y, print_x, '|'); } //print as vertical line
+				else 														{ mvaddch(print_y, print_x, ' '); }
+			}
+			else if (print_fill == 2) 	{ mvprintw(print_y, print_x, "%s", "\u2588"); } 	//print as solid block
+			else 						{ mvaddch(print_y, print_x, ' '); }
 		}
 		else {
 		
 			if (print_fog && visible) 			{ attron(A_BOLD); }
 			else if (print_fog && !(visible)) 	{ attron(A_DIM); }
 			  
-			if ((print_fog && visible && character && character->hp > 0)
-					|| (!print_fog && character && character->hp > 0)) 
+			if ((print_fog && visible && character && character->hp > 0) || (!print_fog && character && character->hp > 0)) 
 				{ character->draw(print_y, print_x, 0); }
+			else if ((print_fog && visible && items.size()) || (!print_fog && items.size())) {
+						
+				if (items.size() > 1) { mvaddch(print_y, print_x, '&'); }
+				else { items[0]->draw(print_y, print_x, 0); }
+			}
 			else {
 				
 				CellType switch_type = type_current;
@@ -143,7 +154,7 @@ void Cell::draw(uint8_t print_y, uint8_t print_x, int print_fog, int print_fill,
 						else if (hardness < CELL_HARDNESS_MAX)		{ mvprintw(print_y, print_x, "%s", "\u2593"); } // print as mostly-filled block
 					}
 					else { mvaddch(print_y, print_x, ' '); }
-				break;
+					break;
 				}
 				attroff(COLOR_PAIR(1));
 			}
@@ -161,3 +172,5 @@ int cell_immutable_tunneling(Cell cell) { return cell.hardness >= CELL_HARDNESS_
 PC* cell_contains_pc(Cell cell) { return (cell.character && cell.character->id < 1) ? ((PC*)(cell.character)) : (NULL); }
 
 NPC* cell_contains_npc(Cell cell) { return (cell.character && cell.character->id > 0) ? ((NPC*)(cell.character)) : (NULL); }
+
+std::vector<Item*>* cell_contains_items(Cell cell) { return (!cell.items.empty()) ? &(cell.items) : NULL; }

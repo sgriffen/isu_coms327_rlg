@@ -1,4 +1,6 @@
 /******** include std libs ********/
+#include <algorithm>
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -40,8 +42,13 @@ Dungeon::Dungeon() {
 	num_npcs 			= 0;
 	num_npcs_dead 		= 0;
 	npcs 				= NULL;
+	
+	num_items_defined 	= 0;
+	item_id_next 		= 1;
+	num_items 			= 0;
+	items 				= NULL;
 }
-Dungeon::Dungeon(uint8_t dungeon_height, uint8_t dungeon_width, int dungeon_num_npcs, int dungeon_num_stairs_up, int dungeon_num_stairs_down, int dungeon_ommit_stairs) : Dungeon() {
+Dungeon::Dungeon(uint8_t dungeon_height, uint8_t dungeon_width, int dungeon_num_npcs, int dungeon_num_items, int dungeon_num_stairs_up, int dungeon_num_stairs_down, int dungeon_ommit_stairs, std::vector<NPC_Template> npc_templates, std::vector<Item_Template> item_templates, std::vector<std::string> *npc_unique_placed, std::vector<std::string> *item_unique_placed) : Dungeon() {
 	
 	int i;
 	srand(time(NULL));
@@ -51,6 +58,7 @@ Dungeon::Dungeon(uint8_t dungeon_height, uint8_t dungeon_width, int dungeon_num_
 	volitile_height 	= dungeon_height-(DUNGEON_BORDER_WIDTH*2);
 	volitile_width 		= dungeon_width-(DUNGEON_BORDER_WIDTH*2);
 	num_npcs 			= dungeon_num_npcs;
+	num_items			= dungeon_num_items;
 	num_staircases_up 	= dungeon_num_stairs_up;
 	num_staircases_down = dungeon_num_stairs_down;
 	num_cells 			= height * width;
@@ -67,8 +75,10 @@ Dungeon::Dungeon(uint8_t dungeon_height, uint8_t dungeon_width, int dungeon_num_
 	dungeon_generate_cooridors(this);
 	/* add staircases */
 	dungeon_generate_staircases(this, dungeon_num_stairs_up, dungeon_num_stairs_down, dungeon_ommit_stairs);
-	/* add pc and npcs */
-	dungeon_generate_npcs(this, dungeon_num_npcs);
+	/* add npcs */
+	dungeon_generate_npcs(this, dungeon_num_npcs, npc_templates, npc_unique_placed);
+	/* add items */
+	dungeon_generate_items(this, dungeon_num_items, item_templates, item_unique_placed);
 }
 /****** function definitions ******/
 void Dungeon::draw(uint8_t offset_y, uint8_t offset_x, int print_fog, int print_fill, int print_weight) {
@@ -457,7 +467,7 @@ void dungeon_generate_staircases(Dungeon *dungeon, int num_staircase_up, int num
 	return;
 }
 
-void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs) {
+void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs, std::vector<NPC_Template> npc_templates, std::vector<std::string> *npc_unique_placed) {
 	
 	/*
 		non-player characters (npcs) are placed at a random location in the dungeon
@@ -465,12 +475,12 @@ void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs) {
 	*/
 	int i = 0, j = 0;
 	int unplaced_npcs = 0;
-	uint8_t speed = 0;
 	
+	/* get number of npcs to generate, and allocate memory in dungeon */
 	dungeon->num_npcs_defined = 1;
 	if (num_npcs < 1) {
 		
-		num_npcs = utils_rand_between(dungeon->num_rooms, (dungeon->num_rooms)*2, NULL);
+		num_npcs = utils_rand_between(dungeon->num_rooms, (dungeon->num_rooms)*2);
 		dungeon->num_npcs_defined = 0;
 	}
 	else if (num_npcs > ((dungeon->num_volitile_cells) - 1)) { num_npcs = (dungeon->num_volitile_cells) - 1; }
@@ -478,52 +488,120 @@ void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs) {
 	
 	for (i = 0; i < num_npcs; i++) {
 		
-		uint8_t type = ((utils_rand_chance(50, NULL)) << 3) | ((utils_rand_chance(50, NULL)) << 2) | ((utils_rand_chance(50, NULL)) << 1) | ((utils_rand_chance(50, NULL)) << 0);
-//		uint8_t type = 0; //define type for debugging
 		Coordinate loc;
 		
-		if (type & NPC_TYPE_TUNNELING) {
+		/* select npc template to create npc from, taking rarity into account and ignorning unique npcs already placed */
+		int template_idx = utils_rand_between(0, npc_templates.size()-1);
+		while (((std::find(npc_unique_placed->begin(), npc_unique_placed->end(), npc_templates[template_idx].name) != npc_unique_placed->end())) || (utils_rand_between(0, 99) < npc_templates[template_idx].rarity))
+			{ template_idx = utils_rand_between(0, npc_templates.size()-1); }
+		if (npc_templates[template_idx].type & NPC_TYPE_UNIQUE) { npc_unique_placed->push_back(npc_templates[template_idx].name); }
+		
+		/* if npc is of type TUNNELING, place anywhere in the dungeon */
+		if (npc_templates[template_idx].type & NPC_TYPE_TUNNELING) {
 			
-			loc.y = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_height, NULL);
-			loc.x = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_width, NULL);
+			loc.y = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_height);
+			loc.x = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_width);
 			
 			while(cell_immutable_tunneling(dungeon->cells[loc.y][loc.x]) && j < DUNGEON_MAX_CHANCE_COUNT) {
 				
-				loc.y = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_height, NULL);
-				loc.x = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_width, NULL);
+				loc.y = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_height);
+				loc.x = utils_rand_between(DUNGEON_BORDER_WIDTH, dungeon->volitile_width);
 				
 				j++;
 			}
-            if (j >= DUNGEON_MAX_CHANCE_COUNT) { unplaced_npcs++; }
-            j = 0;
-		} else {
+		} else { /* else, place npc anywhere in a room in the dungeon */
 			
-			int room_index = utils_rand_between(0, dungeon->num_rooms-1, NULL);
+			int room_index = utils_rand_between(0, dungeon->num_rooms-1);
 			
 			loc.y = utils_rand_between(dungeon->rooms[room_index].tl.y, dungeon->rooms[room_index].br.y, NULL);
 			loc.x = utils_rand_between(dungeon->rooms[room_index].tl.x, dungeon->rooms[room_index].br.x, NULL);
 			
-			while(cell_immutable_ntunneling(dungeon->cells[loc.y][loc.x]) && j < DUNGEON_MAX_CHANCE_COUNT) {
+			while(cell_immutable_ntunneling(dungeon->cells[loc.y][loc.x]) && (j < DUNGEON_MAX_CHANCE_COUNT)) {
+				
+				room_index = utils_rand_between(0, dungeon->num_rooms-1);
 				
 				loc.y = utils_rand_between(dungeon->rooms[room_index].tl.y+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.y-ROOM_BORDER_WIDTH, NULL);
 				loc.x = utils_rand_between(dungeon->rooms[room_index].tl.x+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.x-ROOM_BORDER_WIDTH, NULL);
 				
 				j++;
 			}
-            if (j >= DUNGEON_MAX_CHANCE_COUNT) { unplaced_npcs++; }
-            j = 0;
 		}
 		
-		speed = utils_rand_between(NPC_SPEED_MIN, NPC_SPEED_MAX, NULL);
-		
-		dungeon->npcs[i] = NPC(dungeon->npc_id_next, loc, type, 1, 1, speed);
-		dungeon->npc_id_next++;
+		if (j >= DUNGEON_MAX_CHANCE_COUNT) { unplaced_npcs++; }
+		else {
+			
+			dungeon->npcs[i] = NPC(*(npc_templates[template_idx].new_npc()));
+			dungeon->npcs[i].id = dungeon->npc_id_next;
+			dungeon->npcs[i].location = loc;
+			dungeon->npc_id_next++;
+		}
+		j = 0;
 	}
 	
 	dungeon->num_npcs = num_npcs-unplaced_npcs;
     dungeon->num_npcs_dead = 0;
 	
 	return;
+}
+
+void dungeon_generate_items(Dungeon *dungeon, int num_items, std::vector<Item_Template> item_templates, std::vector<std::string> *item_unique_placed) {
+	
+	/*
+		items are placed at a random location in a random room in the dungeon
+		all locations exclude where the pc is placed
+	*/
+	
+	int i = 0, j = 0;
+	int unplaced_items = 0;
+	
+	/* get number of items to generate, and allocate memory in dungeon */
+	dungeon->num_items_defined = 1;
+	if (num_items < 1) {
+		
+		num_items = utils_rand_between(10, 20);
+		dungeon->num_items_defined = 0;
+	}
+	dungeon->items =(Item*)calloc(num_items, sizeof(Item));
+	
+	for (i = 0; i < num_items; i++) {
+		
+		Coordinate loc;
+		
+		/* select item template to create item from, taking rarity into account and ignorning artifact items already placed */
+		int template_idx = utils_rand_between(0, item_templates.size()-1);
+		while (((std::find(item_unique_placed->begin(), item_unique_placed->end(), item_templates[template_idx].name) != item_unique_placed->end())) || (utils_rand_between(0, 99) < item_templates[template_idx].rarity))
+			{ template_idx = utils_rand_between(0, item_templates.size()-1); }
+		if (item_templates[template_idx].status) { item_unique_placed->push_back(item_templates[template_idx].name); }
+		
+		int room_index = utils_rand_between(0, dungeon->num_rooms-1);
+		
+		loc.y = utils_rand_between(dungeon->rooms[room_index].tl.y, dungeon->rooms[room_index].br.y, NULL);
+		loc.x = utils_rand_between(dungeon->rooms[room_index].tl.x, dungeon->rooms[room_index].br.x, NULL);
+		
+		while(cell_immutable_ntunneling(dungeon->cells[loc.y][loc.x]) && (j < DUNGEON_MAX_CHANCE_COUNT)) {
+			
+			room_index = utils_rand_between(0, dungeon->num_rooms-1);
+			
+			loc.y = utils_rand_between(dungeon->rooms[room_index].tl.y+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.y-ROOM_BORDER_WIDTH, NULL);
+			loc.x = utils_rand_between(dungeon->rooms[room_index].tl.x+ROOM_BORDER_WIDTH, dungeon->rooms[room_index].br.x-ROOM_BORDER_WIDTH, NULL);
+			
+			j++;
+		}
+		
+		if (j >= DUNGEON_MAX_CHANCE_COUNT) { unplaced_items++; }
+		else {
+			
+			dungeon->items[i] = Item(*(item_templates[template_idx].new_item()));
+			dungeon->items[i].id = dungeon->item_id_next;
+			dungeon->items[i].location = loc;
+			dungeon->item_id_next++;
+			
+			dungeon->cells[loc.y][loc.x].items.push_back(&(dungeon->items[i]));
+		}
+		j = 0;
+	}
+	
+	dungeon->num_items = num_items-unplaced_items;
 }
 
 int dungeon_coordinate_inbounds(Coordinate coord) { return (coord.y > 0 && coord.y < DUNGEON_HEIGHT && coord.x > 0 && coord.x < DUNGEON_WIDTH); }
@@ -672,8 +750,9 @@ void dungeon_pc_los(Dungeon *dungeon, Character *pc, uint8_t mark) {
 	int i = 0;
 	int j = 0;
 	
-	for (i = -2; i < 3; i++) {
-		for (j = -2 ; j < 3; j++) {
+	int vision_buff = ((PC*)pc)->buff_light();
+	for (i = -2 - vision_buff; i < 3 + vision_buff; i++) {
+		for (j = -2 - vision_buff; j < 3 + vision_buff; j++) {
 			
 			Coordinate location = pc->location;
 			location.y += i;
@@ -693,14 +772,18 @@ void dungeon_pc_los(Dungeon *dungeon, Character *pc, uint8_t mark) {
 	}
 }
 
-void dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinate next) {
+int* dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinate next, int override_damage) {
 	
 	/*
 		Resolves potential collisions with the next cell a character wants to move to, and the current character that's in that cell
 		Returns 0 if there is no collision
-		Returns -1 if an npc moves into the cell the pc is located in (npc kills pc)
-		Returns the id of an npc if a character moves into the cell the is located in (pc or npc kills npc)
+		Returns -1 if an npc attacks into the cell the pc is located in (npc kills pc)
+		Returns the id of an npc if a character moves into the cell the is located in (pc attacks npc or npc's swap positions)
 	*/
+	
+	int collision_type = 0;
+	int damage_roll = 0;
+	int boss_defeated = 0;
 	
 	PC* pc_location = NULL;
 	NPC* npc_location = NULL;
@@ -709,52 +792,90 @@ void dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinat
 		
 		dungeon_pc_los(dungeon, character, 0);
 		
+		character->prev_location = character->location;
+		
 		npc_location = cell_contains_npc(dungeon->cells[next.y][next.x]);
 		if (npc_location) {
 			
-			npc_location->hp -= character->damage;
+			//perform attack here
+			if (override_damage) { npc_location->hp -= npc_location->hp; }
+			else {
+				
+				damage_roll = ((PC*)character)->buff_damage() + character->damage.roll();
+				if (damage_roll > 0) { npc_location->hp -= damage_roll; }
+			}
+			
 			if (npc_location->hp < 1) {
 				
+				if (npc_location->type & NPC_TYPE_BOSS) { boss_defeated = 1; }
+				if (!(npc_location->inventory.empty())) {
+					
+					std::vector<Item*>::iterator cell_item_itr;
+					for (cell_item_itr = npc_location->inventory.begin(); cell_item_itr != npc_location->inventory.end(); cell_item_itr++) { dungeon->cells[npc_location->location.y][npc_location->location.x].items.push_back(*cell_item_itr); }
+					npc_location->inventory.erase(npc_location->inventory.begin(), npc_location->inventory.end());
+				}
 				dungeon->cells[npc_location->location.y][npc_location->location.x].character = NULL;
 				(dungeon->num_npcs_dead)++;
+				
+				((PC*)character)->num_kills++;
 			}
+			collision_type = npc_location->id;
+			
+			if (override_damage) {
+				
+				dungeon->cells[character->location.y][character->location.x].character = NULL;
+			
+				character->location = next;
+				dungeon->cells[next.y][next.x].character = character;
+			}
+		} else {
+			dungeon->cells[character->location.y][character->location.x].character = NULL;
+			
+			character->location = next;
+			dungeon->cells[next.y][next.x].character = character;
 		}
-		
-		dungeon->cells[character->location.y][character->location.x].character = NULL;
-		dungeon->cells[next.y][next.x].character = character;
-		
-		character->prev_location = character->location;
-		character->location = next;
 		
 		dungeon_pc_los(dungeon, character, 1);
 	} else {
 		
+		character->prev_location = character->location;
+		
 		pc_location = cell_contains_pc(dungeon->cells[next.y][next.x]);
 		if (pc_location) {
 			
-			pc_location->hp -= character->damage;
+			//perform attack here
+			damage_roll = character->damage.roll() - pc_location->buff_defense();
+			if (damage_roll > 0) { pc_location->hp -= damage_roll; }
+			
 			if (pc_location->hp < 1) { dungeon->cells[pc_location->location.y][pc_location->location.x].character = NULL; }
+			
+			collision_type = -1;
 		}
 		
 		npc_location = cell_contains_npc(dungeon->cells[next.y][next.x]);
 		if (npc_location && (npc_location->id != ((NPC*)(character))->id)) {
 			
-			npc_location->hp -= character->damage;
-			if (npc_location->hp < 1) {
-				
-				dungeon->cells[npc_location->location.y][npc_location->location.x].character = NULL;
-				(dungeon->num_npcs_dead)++;
-			}
+			/* move npc at location next to current character's location, and move current character to location next */
+			npc_location->prev_location = npc_location->location;
+			npc_location->location = character->location;
+			dungeon->cells[character->location.y][character->location.x].character = (Character*)npc_location;
+			
+			character->location = next;
+			dungeon->cells[next.y][next.x].character = character;
+			
+			collision_type = npc_location->id;
 		}
-		
-		dungeon->cells[character->location.y][character->location.x].character = NULL;
-		dungeon->cells[next.y][next.x].character = character;
-		
-		character->prev_location = character->location;
-		character->location = next;
+		if (!pc_location && !npc_location) {
+			
+			dungeon->cells[character->location.y][character->location.x].character = NULL;
+			
+			character->location = next;
+			dungeon->cells[next.y][next.x].character = character;
+		}
 	}
 	
-	return;
+	static int arr[] = { collision_type, damage_roll, boss_defeated };
+	return arr;
 }
 
 int dungeon_contains_npcs(Dungeon *dungeon) { return dungeon->num_npcs > dungeon->num_npcs_dead; }

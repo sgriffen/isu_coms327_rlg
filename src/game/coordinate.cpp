@@ -16,6 +16,11 @@ Coordinate::Coordinate(uint8_t coordinate_y, uint8_t coordinate_x) : Coordinate(
 	y = coordinate_y;
 	x = coordinate_x;
 }
+Coordinate::Coordinate(const Coordinate &rhs) {
+	
+	y = rhs.y;
+	x = rhs.x;
+}
 
 /****** function definitions ******/
 int Coordinate::is_same(Coordinate beta) { return (beta.y == y && beta.x == x); }

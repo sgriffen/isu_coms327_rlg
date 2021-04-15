@@ -1,10 +1,12 @@
 #include <string>
+#include <vector>
 
 #include <stdint.h>
 
 #ifndef ITEM_TEMPLATE_H
 #define ITEM_TEMPLATE_H
 
+#include "./item.h"
 #include "../../res/color.h"
 #include "../utils/classdef/dice.h"
 
@@ -46,7 +48,7 @@ class Item_Template {
 		uint8_t status;
 		uint32_t type;
 		uint8_t rarity;
-		uint8_t color;
+		std::vector<uint8_t> color;
 		
 		Dice value;
 		Dice weight;
@@ -63,6 +65,10 @@ class Item_Template {
 		
 		
 		/* FUNCTIONS */
+		Item* new_item();
+		
+		char get_symbol(uint32_t item_type);
+		
 		void print();
 };
 

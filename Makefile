@@ -14,6 +14,7 @@ DEPENDENCIES_H = 	$(DIR_BASE)main.h $\
 					$(DIR_GAME_UTILS)pathfinder.h $\
 					$(DIR_GAME_CLASSDEF)cell.h $\
 					$(DIR_GAME_CLASSDEF)character.h $\
+					$(DIR_GAME_CLASSDEF)item.h $\
 					$(DIR_GAME_CLASSDEF)coordinate.h $\
 					$(DIR_GAME_CLASSDEF)dungeon.h $\
 					$(DIR_GAME_CLASSDEF)room.h $\
@@ -27,11 +28,13 @@ DEPENDENCIES_H = 	$(DIR_BASE)main.h $\
 
 DEPENDENCIES_C = 	$(DIR_BASE)main.cpp $\
 					$(DIR_GAME_UTILS)queue.cpp $\
+					$(DIR_GAME_UTILS)dice.cpp $\
+					$(DIR_GAME_UTILS)parse_io.cpp $\
 					$(DIR_GAME_UTILS)movement.cpp $\
 					$(DIR_GAME_UTILS)pathfinder.cpp $\
-					$(DIR_GAME_UTILS)dice.cpp $\
 					$(DIR_GAME)cell.cpp $\
 					$(DIR_GAME)character.cpp $\
+					$(DIR_GAME)item.cpp $\
 					$(DIR_GAME)coordinate.cpp $\
 					$(DIR_GAME)dungeon.cpp $\
 					$(DIR_GAME)room.cpp $\

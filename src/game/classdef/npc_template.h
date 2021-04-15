@@ -1,10 +1,12 @@
 #include <string>
+#include <vector>
 
 #include <stdint.h>
 
 #ifndef NPC_TEMPLATE_H
 #define NPC_TEMPLATE_H
 
+#include "./character.h"
 #include "../../res/color.h"
 #include "../utils/classdef/dice.h"
 
@@ -37,7 +39,8 @@ class NPC_Template {
 		
 		uint16_t type;
 		uint8_t rarity;
-		uint8_t color;
+		uint8_t num_colors;
+		std::vector<uint8_t> color;
 		
 		Dice speed;
 		Dice hp;
@@ -49,6 +52,8 @@ class NPC_Template {
 		
 		
 		/* FUNCTIONS */
+		NPC* new_npc();
+		
 		void print();
 };
 

@@ -20,15 +20,16 @@ int main(int argc, char *argv[]) {
 	RunArgs run_args = {
 		
 		.print_config = {
-			.fill 				= 0,
+			.fill 				= 1,
 			.hardness 			= 0,
 			.weight_ntunneling 	= 0,
 			.weight_tunneling 	= 0,
 			.traversal_cost 	= 0
 		},
-		.config_npc 			= dir_home + "/monster_desc.txt",
-		.config_item 			= dir_home + "/object_desc.txt",
+		.config_npc 			= dir_home + "/.rlg327/monster_desc.txt",
+		.config_item 			= dir_home + "/.rlg327/object_desc.txt",
 		.num_npcs 				= 0,
+		.num_items				= 0,
 		.num_dungeons 			= 0
 	};
 	GameState g_state;
@@ -42,10 +43,10 @@ int main(int argc, char *argv[]) {
 	rouge_init(&g_state, argv, run_args);
 	
 	/* main game logic */
-//	state_run(&g_state, run_args);
+	g_state.run(run_args);
 	
 	/* save dungeons to file if desired */
-//	rouge_clean(&g_state, argv, run_args);
+	rouge_clean(&g_state, argv, run_args);
 	
 	return 0;
 }
@@ -56,18 +57,20 @@ void args_parse(int argc, char *argv[], RunArgs *run_args) {
 	
 	for (i = 1; i < argc; i++) {
 		
-		if (!strcmp(argv[i], "--config-npc") || !strcmp(argv[i], "--c-npc")) { run_args->config_npc.assign(argv[i+1]); } //define absolute path to file to read npc config from 
+		if (!strcmp(argv[i], "--config-npc") || !strcmp(argv[i], "--c-npc")) 		{ run_args->config_npc.assign(argv[i+1]); } //define absolute path to file to read npc config from 
 		
-		if (!strcmp(argv[i], "--config-item") || !strcmp(argv[i], "--c-item")) { run_args->config_item.assign(argv[i+1]); } //define absolute path to file to read item config from
+		if (!strcmp(argv[i], "--config-item") || !strcmp(argv[i], "--c-item")) 		{ run_args->config_item.assign(argv[i+1]); } //define absolute path to file to read item config from
+		
+		if (!strcmp(argv[i], "--nummon") || !strcmp(argv[i], "--nm")) 				{ run_args->num_npcs = atoi(argv[i+1]); } //define number of npcs per dungeon
+		
+		if (!strcmp(argv[i], "--numitem") || !strcmp(argv[i], "--nt")) 				{ run_args->num_items = atoi(argv[i+1]); } //define number of items per dungeon
+		
+		if (!strcmp(argv[i], "--numdun") || !strcmp(argv[i], "--nd")) 				{ run_args->num_dungeons = atoi(argv[i+1]); } //define number of dungeons to generate
 		
 		if (i+1 < argc && (!strcmp(argv[i], "--print") || !strcmp(argv[i], "--p"))) { //print a (dungeons border) or (filled-in walls and empty rooms)
 			
-			if (!strcmp(argv[i+1], "b")) 		{ run_args->print_config.fill = 1; } //print (dungeons border)
-			else if (!strcmp(argv[i+1], "f")) 	{ run_args->print_config.fill = 2; } //print (filled-in walls and empty rooms)
-		}		
-		if (!strcmp(argv[i], "--nummon") || !strcmp(argv[i], "--nm")) { run_args->num_npcs = atoi(argv[i+1]); } //define number of npcs per dungeons
-		
-		if (!strcmp(argv[i], "--numdun") || !strcmp(argv[i], "--nd")) { run_args->num_dungeons = atoi(argv[i+1]); } //define number dungeons 
+			if (!strcmp(argv[i+1], "f")) 	{ run_args->print_config.fill = 2; } //print (filled-in walls and empty rooms)
+		}
 	}
 	
 	if (!(run_args->num_dungeons)) { run_args->num_dungeons = utils_rand_between(2, 10, NULL); }
@@ -77,31 +80,17 @@ void args_parse(int argc, char *argv[], RunArgs *run_args) {
 
 void rouge_init(GameState *g_state, char *argv[], RunArgs run_args) {
 	
+	srand(time(NULL));
+	
 	std::vector<NPC_Template>::iterator	it_npc;
 	std::vector<NPC_Template> npc_templates = rouge_parse_npc(run_args.config_npc);
 	
 	std::vector<Item_Template>::iterator it_item;
 	std::vector<Item_Template> item_templates = rouge_parse_item(run_args.config_item);
 	
-	std::cout << "-------------------- DEFINED NPCS --------------------" << std::endl << std::endl;
-	for (it_npc = npc_templates.begin(); it_npc != npc_templates.end(); it_npc++) {
-		
-		it_npc->print();
-		std::cout << std::endl;
-	}
+	*g_state = GameState(run_args.num_dungeons, run_args.num_npcs, run_args.num_items, npc_templates, item_templates);
 	
-	std::cout << std::endl;
-	
-	std::cout << "------------------- DEFINED ITEMS --------------------" <<std::endl << std::endl;
-	for (it_item = item_templates.begin(); it_item != item_templates.end(); it_item++) {
-		
-		it_item->print();
-		std::cout << std::endl;
-	}
-	
-//	*g_state = GameState(run_args.num_dungeons, run_args.num_npcs, npc_templates, item_templates);
-	
-//	rouge_init_terminal();
+	rouge_init_terminal();
 	
 	return;
 }
@@ -115,7 +104,7 @@ void rouge_init_terminal() {
 	keypad(stdscr, TRUE);
 	
 	start_color();
-	init_pair(PAIR_BLACK, COLOR_BLACK, COLOR_BLACK);
+	init_pair(PAIR_BLACK, COLOR_WHITE, COLOR_BLACK);
 	init_pair(PAIR_WHITE, COLOR_WHITE, COLOR_BLACK);
 	init_pair(PAIR_RED, COLOR_RED, COLOR_BLACK);
 	init_pair(PAIR_GREEN, COLOR_GREEN, COLOR_BLACK);
@@ -127,7 +116,6 @@ void rouge_init_terminal() {
 
 void rouge_clean(GameState *g_state, char *argv[], RunArgs run_args) {
 	
-	free(g_state->dungeons);
 	rouge_clean_terminal();
 	
 	return;
@@ -223,15 +211,18 @@ std::vector<NPC_Template> rouge_parse_npc(std::string filename) {
 					}
 					else if (!line_splt[0].compare("COLOR")) {
 						
-						if 		(!line_splt[1].compare("BLACK")) 	{ npc_templates.back().color = PAIR_BLACK; }
-						else if (!line_splt[1].compare("RED")) 		{ npc_templates.back().color = PAIR_RED; }
-						else if (!line_splt[1].compare("GREEN")) 	{ npc_templates.back().color = PAIR_GREEN; }
-						else if (!line_splt[1].compare("BLUE")) 	{ npc_templates.back().color = PAIR_BLUE; }
-						else if (!line_splt[1].compare("CYAN")) 	{ npc_templates.back().color = PAIR_CYAN; }
-						else if (!line_splt[1].compare("YELLOW")) 	{ npc_templates.back().color = PAIR_YELLOW; }
-						else if (!line_splt[1].compare("MAGENTA")) 	{ npc_templates.back().color = PAIR_MAGENTA; }
-						else 										{ npc_templates.back().color = PAIR_WHITE; }
-						
+						std::vector<std::string>::iterator line_splt_itr;
+						for (line_splt_itr = line_splt.begin() + 1; line_splt_itr != line_splt.end(); line_splt_itr++) {
+							
+							if 		(!(*line_splt_itr).compare("BLACK")) 	{ npc_templates.back().color.push_back((uint8_t)PAIR_BLACK); }
+							else if (!(*line_splt_itr).compare("RED")) 		{ npc_templates.back().color.push_back((uint8_t)PAIR_RED); }
+							else if (!(*line_splt_itr).compare("GREEN")) 	{ npc_templates.back().color.push_back((uint8_t)PAIR_GREEN); }
+							else if (!(*line_splt_itr).compare("BLUE")) 	{ npc_templates.back().color.push_back((uint8_t)PAIR_BLUE); }
+							else if (!(*line_splt_itr).compare("CYAN")) 	{ npc_templates.back().color.push_back((uint8_t)PAIR_CYAN); }
+							else if (!(*line_splt_itr).compare("YELLOW")) 	{ npc_templates.back().color.push_back((uint8_t)PAIR_YELLOW); }
+							else if (!(*line_splt_itr).compare("MAGENTA")) 	{ npc_templates.back().color.push_back((uint8_t)PAIR_MAGENTA); }
+							else 											{ npc_templates.back().color.push_back((uint8_t)PAIR_WHITE); }
+						}
 						npc_param_count++;
 					}
 					else if (!line_splt[0].compare("ABIL")) {
@@ -418,15 +409,18 @@ std::vector<Item_Template> rouge_parse_item(std::string filename) {
 					}
 					else if (!line_splt[0].compare("COLOR")) {
 						
-						if 		(!line_splt[1].compare("BLACK")) 	{ item_templates.back().color = PAIR_BLACK; }
-						else if (!line_splt[1].compare("RED")) 		{ item_templates.back().color = PAIR_RED; }
-						else if (!line_splt[1].compare("GREEN")) 	{ item_templates.back().color = PAIR_GREEN; }
-						else if (!line_splt[1].compare("BLUE")) 	{ item_templates.back().color = PAIR_BLUE; }
-						else if (!line_splt[1].compare("CYAN")) 	{ item_templates.back().color = PAIR_CYAN; }
-						else if (!line_splt[1].compare("YELLOW")) 	{ item_templates.back().color = PAIR_YELLOW; }
-						else if (!line_splt[1].compare("MAGENTA")) 	{ item_templates.back().color = PAIR_MAGENTA; }
-						else 										{ item_templates.back().color = PAIR_WHITE; }
-						
+						std::vector<std::string>::iterator line_splt_itr;
+						for (line_splt_itr = line_splt.begin() + 1; line_splt_itr != line_splt.end(); line_splt_itr++) {
+							
+							if 		(!(*line_splt_itr).compare("BLACK")) 	{ item_templates.back().color.push_back((uint8_t)PAIR_BLACK); }
+							else if (!(*line_splt_itr).compare("RED")) 		{ item_templates.back().color.push_back((uint8_t)PAIR_RED); }
+							else if (!(*line_splt_itr).compare("GREEN")) 	{ item_templates.back().color.push_back((uint8_t)PAIR_GREEN); }
+							else if (!(*line_splt_itr).compare("BLUE")) 	{ item_templates.back().color.push_back((uint8_t)PAIR_BLUE); }
+							else if (!(*line_splt_itr).compare("CYAN")) 	{ item_templates.back().color.push_back((uint8_t)PAIR_CYAN); }
+							else if (!(*line_splt_itr).compare("YELLOW")) 	{ item_templates.back().color.push_back((uint8_t)PAIR_YELLOW); }
+							else if (!(*line_splt_itr).compare("MAGENTA")) 	{ item_templates.back().color.push_back((uint8_t)PAIR_MAGENTA); }
+							else 											{ item_templates.back().color.push_back((uint8_t)PAIR_WHITE); }
+						}
 						item_param_count++;
 					}
 				} else {

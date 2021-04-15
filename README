@@ -1,42 +1,14 @@
 Sean Griffen (griffens)
 
-
-This is my solution to homework 1.07, "Parsing Monster Definitions" and optionally "Parsing Item Definitions".
-This implentation does parse both npcs and items stores them into two vectors (one for npcs, one for items), and will eventually pass those two vectors into the GameState object to generate the dungeons later.
-As of right now, the two vectors are printed after parsing is complete, showing what has been parsed from the files, per the assignment requirements
+This is my solution to homework 1.09, "PC Equipment and Updated Combat".
 
 Things to note:
-	- There is no gameplay per the assignmebt requirements. Only the parsed NPC and Item lists are printed
-	- An NPC's configuration is printed in the following order:
-		- name
-		- description
-		- symbol
-		- color
-		- speed
-		- abilities
-		- hitpoints
-		- attack damage
-		- rarity
-	- An Item's configuration is printed in the following order:
-		- name
-		- description
-		- type
-		- color
-		- value
-		- weight
-		- attribute
-		- speed bonus
-		- defense bonus
-		- damage bonus
-		- hit bonus
-		- dodge bonus
-		- artifact status
-		- rarity
-	- To get the home directory, getenv("HOME") is called
-	- The parsing functions 'rouge_parse_npc()' and 'rouge_parse_item()' can be found in main.cpp. These functions are called in the main.cpp function 'rouge_init()'
-	- The NPC print function 'print()' can be found in src/game/NPC_Template.cpp
-	- The Item print function 'print()' can be found in src/game/Item_Template.cpp
-
+	- The PC gets 1 free move at the begenning
+	- Equipped items and item inventory is persistent while traversing dungeon levels
+	- To win, BOSS NPC must be defeated (if generated), otherwise all NPCs on the last level of the dungeon must be defeated
+	- Warping on top of an NPC will immediatly kill that NPC
+	- Pathfinding algorithm is a naive implementation of a priority queue (i.e. is not a binary heap), so it performs very slow due to re-sorting array after a priority of a node is changed (reason for delay between user input and pc and npcs moving). 
+		Working on a fix to use a binary heap to implement the priority queue, but won't get done until next assignment, sorry :(
 
 To run the program, run the Makefile, and enter './rlg'. The valid command arguments are defined as follows:
 	It is assummed that an argument is precedded with a "--" and arguments have no such prefix. 
@@ -45,42 +17,51 @@ To run the program, run the Makefile, and enter './rlg'. The valid command argum
 	- Specify npc config file
 		- flag: config-npc | c-npc
 		- arguments: <filepath.txt>
-		- description: Specify a .txt file to load the npc template configurations from
+		- description: Specify an ascii-encoded file to load the npc template configurations from
 		- notes: 
 			- If the file is in the same directory as main.cpp, then <filepath> can be relative to main.cpp
 			- Otherwise, <filepath> must be the absolute path to the file.
 			- File parsing is assumed to be a .txt file
-		- default behavior: Item configuration is loaded from ~/monster_desc.txt
+		- default behavior: Item configuration is loaded from ~/.rlg327/monster_desc.txt
 		- example command: --c-npc "configs/templates/npcs.txt"
 	- Specify item config file
 		- flag: config-item | c-item
 		- arguments: <filepath.txt>
-		- description: Specify a .txt file to load the item template configurations from
+		- description: Specify an ascii-encoded file to load the item template configurations from
 		- notes: 
 			- If the file is in the same directory as main.cpp, then <filepath> can be relative to main.cpp
 			- Otherwise, <filepath> must be the absolute path to the file.
 			- File parsing is assumed to be a .txt file
-		- default behavior: Item configuration is loaded from ~/object_desc.txt
+		- default behavior: Item configuration is loaded from ~/.rlg327/object_desc.txt
 		- example command: --c-item "configs/templates/items.txt"
 	- Print dungeon mod:
 		- flag: print | p
-		- arguments: <b | f>
+		- arguments: <f>
 		- description: 
-			- arg = <b>: Prints a dungeon border
-			- arg = <f>: Rocks are printed as unicode blocks, increasing shade of block as hardness increases. Rooms and cooridors are printed as empty spaces to contrast filled in rocks
+			- Rocks are printed as unicode blocks, increasing shade of block as hardness increases. Rooms and cooridors are printed as empty spaces to contrast filled in rocks
 		- notes: 
-		- default behavior: Printing follows required specification
+		- default behavior: Printing follows required specification with border around playable area
 		- example command: --border f
 	- Number of npcs to generate per level
 		- flag: nummon | nm
 		- arguments: <uint>
 		- description: 
-			- Generates <uint> number of npcs in the dungeon
+			- Generates <uint> number of npcs in the current level of the dungeon
 		- notes: 
 			- <uint> should be non-negative. If <uint> is more than the max amount of playable cells in the dungeon, <uint> is truncated to the max number of playable cells
 			- If nummon is defined, all generated "dungeons" during a single "game" have the same <uint> number of npcs
 		- default behavior: A random number of npcs between <num_rooms> and <num_rooms * 2> are generated
 		- example command: --nm 20
+	- Number of items to generate per level
+		- flag: numitem | nt
+		- arguments: <uint>
+		- description: 
+			- Generates <uint> number of items in the current level of the dungeon
+		- notes: 
+			- <uint> should be non-negative. If <uint> is more than the max amount of playable cells in the dungeon, <uint> is truncated to the max number of playable cells
+			- If numitem is defined, all generated "dungeons" during a single "game" have the same <uint> number of items
+		- default behavior: A random number of items between 10 and 20 are generated
+		- example command: --nt 5
 	- Number of dungeons to generate per game
 		- flag: numdun | nd
 		- arguments: <uint>
@@ -89,7 +70,6 @@ To run the program, run the Makefile, and enter './rlg'. The valid command argum
 		- notes: <uint> should be non-negative
 		- default behavior: A random number of dungeons between 2 and 10 are generated
 		- example command: --nd 12
-	
 
 A command to run this application with all arguments defined may look as follows:
-	./rlg [<--config-npc | --c-npc> <filepath.txt>] [<--config-item | --c-item> <filepath.txt>] [<--print | --p> <b | f>] [<--nummmon | --nm> <uint>] [<--numdun | --nd> <uint>]
+	./rlg [<--config-npc | --c-npc> <filepath>] [<--config-item | --c-item> <filepath>] [<--print | --p> <f>] [<--nummmon | --nm> <uint>] [<--numdun | --nd> <uint>] [<--numitem | --nt> <uint>]

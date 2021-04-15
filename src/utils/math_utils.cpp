@@ -10,28 +10,16 @@
 /****** function definitions ******/
 int utils_rand_between(int lower_bound, int upper_bound, time_t *seed) {
 	
-	//srand(time(seed));
-	
+	if (seed) { srand(time(seed)); }
 	return (rand() % ((upper_bound + 1) - lower_bound)) + lower_bound;
 }
 
 int utils_rand_chance(float chance, time_t *seed) {
 	
-	//srand(time(seed));
-
+	if (seed) { srand(time(seed)); }
 	return (rand() % 10000) < (chance*100);
 }
 
-int utils_min(int beta, int alpha) {
+int utils_min(int beta, int alpha) { return (beta < alpha) ? beta : alpha; }
 
-	if (beta < alpha) { return beta; }
-	
-	return alpha;
-}
-
-int utils_max(int beta, int alpha) {
-	
-	if (beta > alpha) { return beta; }
-	
-	return alpha;
-}
+int utils_max(int beta, int alpha) { return (beta > alpha) ? beta : alpha; }

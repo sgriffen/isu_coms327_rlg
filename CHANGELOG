@@ -1,3 +1,22 @@
+04/15/2021
+	- Turn in of final assignment 1.09 draft
+	- Applying equipped item bonuses to applicable PC attributes
+
+04/14/2021
+	- Completion of all new menus
+	- Implemntation of PC item pickup mechanic
+
+04/08/2021
+	- Turn in of final assignment 1.08 draft
+	- Updating CHANGELOG
+	- Updating README with new command arg "numitem" and with assignment 1.08 description
+	- Implemting new NPC abilities (PASS, PICKUP, and DESTROY)
+
+04/07/2021
+	- Fixing errors to make game playable again
+	- Generating Items from description objects and placing into dungeon
+	- Generating NPCs from description objects and placing into dungeon, replacing old NPC creation logic
+
 04/01/2021
 	- Turn in of final assignment 1.07 draft
 	- Updating README for assignment 1.07 description

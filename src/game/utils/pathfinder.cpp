@@ -99,42 +99,23 @@ void pathfinder_ntunneling(Dungeon *dungeon, Coordinate *start) {
 	
 	for (i = 0; i < dungeon->height; i++) { //initialize all weights to infinity traversal distance (UINT32_HAX), except starting cell
 		for (j = 0; j < dungeon->width; j++) {
-			
-//			dungeon->cells[i][j].weight[0] = CELL_HARDNESS_MAX;
-			
+						
 			if (!cell_immutable_ntunneling(dungeon->cells[i][j])) {
 				
 				if (start->is_same(dungeon->cells[i][j].location)) 	{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), CELL_HARDNESS_MIN)); }
 				else 												{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), UINT16_MAX)); }
-				
-//				printf("-- debug -- adding to queue y:[%d] x:[%d]\n", dungeon->cells[i][j].location.y, dungeon->cells[i][j].location.x);
 			}
 		}
 	}
 	
-//	printf("-- debug -- queue:\n");
-//	queue_print(queue);
-//	printf("-- end debug --\n");
-	
-//	printf("-- debug -- starting queue at y:[%d] x:[%d]\n", start->y, start->x);
-	
-//	printf("-- debug -- queue size:[%d]\n", queue.size);
-//	printf("-- debug -- queue index:[%d]\n", queue.index);
-//	printf("-- debug -- first in queue at index:[%d] - priority:[%d] y:[%d] x:[%d]\n", queue.index-1, queue_peek(&queue)->priority, queue_peek(&queue)->cell_loc->y, queue_peek(&queue)->cell_loc->x);
-	
 	/* traverse queue (execute Dijkstra’s Algorithm) */
 	while (!queue_is_empty(queue)) {
 		
-		QueueNode node = queue_dequeue(&queue);
-//		printf("-- debug -- dequeuing index:[%d] y:[%d] x:[%d] priority:[%d]\n", queue.index, node.cell_loc->y, node.cell_loc->x, node.priority);
-		
+		QueueNode node = queue_dequeue(&queue);		
 		Coordinate *loc = (Coordinate*)(node.element);
 		dungeon->cells[loc->y][loc->x].weight_ntunneling = node.priority;
 		
 		pathfinder_mark_neighbors(&queue, node, CELL_NUM_NEIGHBORS, CELL_TRAVERSAL_COST(dungeon->cells[loc->y][loc->x].hardness), queue_find_neighbors_diag);
-		
-//		dungeon_print(*dungeon, 0, 0, 2);
-//		if (queue.index > 200) { queue_print(queue); }
 	}
 	
 	free(queue.nodes);
@@ -150,41 +131,22 @@ void pathfinder_tunneling(Dungeon *dungeon, Coordinate *start) {
 	for (i = 0; i < dungeon->height; i++) { //initialize all weights to infinity traversal distance (CELL_HARDNESS_MAX), except starting cell
 		for (j = 0; j < dungeon->width; j++) {
 			
-//			dungeon->cells[i][j].weight[1] = CELL_HARDNESS_MAX;
-			
 			if (!cell_immutable_tunneling(dungeon->cells[i][j])) {
 				
 				if (start->is_same(dungeon->cells[i][j].location)) 	{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), CELL_HARDNESS_MIN)); }
 				else 												{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), UINT16_MAX)); }
-				
-//				printf("-- debug -- adding to queue y:[%d] x:[%d]\n", dungeon->cells[i][j].location.y, dungeon->cells[i][j].location.x);
 			}
 		}
 	}
 	
-//	printf("-- debug -- queue:\n");
-//	queue_print(queue);
-//	printf("-- end debug --\n");
-	
-//	printf("-- debug -- starting queue at y:[%d] x:[%d]\n", start->y, start->x);
-	
-//	printf("-- debug -- queue size:[%d]\n", queue.size);
-//	printf("-- debug -- queue index:[%d]\n", queue.index);
-//	printf("-- debug -- first in queue at index:[%d] - priority:[%d] y:[%d] x:[%d]\n", queue.index-1, queue_peek(&queue)->priority, queue_peek(&queue)->cell_loc->y, queue_peek(&queue)->cell_loc->x);
-	
 	/* traverse queue (execute Dijkstra’s Algorithm) */
 	while (!queue_is_empty(queue)) {
 		
-		QueueNode node = queue_dequeue(&queue);
-//		printf("-- debug -- dequeuing index:[%d] y:[%d] x:[%d] priority:[%d]\n", queue.index, node.cell_loc->y, node.cell_loc->x, node.priority);
-		
+		QueueNode node = queue_dequeue(&queue);		
 		Coordinate *loc = (Coordinate*)(node.element);
 		dungeon->cells[loc->y][loc->x].weight_tunneling = node.priority;
 		
 		pathfinder_mark_neighbors(&queue, node, CELL_NUM_NEIGHBORS, CELL_TRAVERSAL_COST(dungeon->cells[loc->y][loc->x].hardness), queue_find_neighbors_diag);
-		
-//		dungeon_print(*dungeon, 0, 0, 2);
-//		if (queue.index > 200) { queue_print(queue); }
 	}
 	
 	free(queue.nodes);
@@ -200,13 +162,9 @@ void pathfinder_mark_neighbors(Queue *queue, QueueNode from, int max_num_neighbo
 	QueueNode **neighbors = (QueueNode**)calloc(max_num_neighbors, sizeof(QueueNode*));
 	
 	num_neighbors = mark(queue, from, max_num_neighbors, neighbors);
-	
-//	printf("-- debug -- found neighbors:[%d]\n", num_neighbors);
-	
+		
 	for (i = 0; i < num_neighbors; i++) {
-		
-//		printf("-- debug -- marking neighbor:[%d]\n", i);
-		
+				
 		if (neighbors[i]->priority > (from.priority + cost)) {
 			
 			neighbors[i]->priority = from.priority + cost;
