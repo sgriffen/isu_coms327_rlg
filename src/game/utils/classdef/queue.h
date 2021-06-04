@@ -1,13 +1,12 @@
-#include <stdint.h>
-
 #ifndef QUEUE_H
 #define QUEUE_H
 
-#include "../../classdef/coordinate.h"
-
+#include <cstdlib>
+#include <cstdint>
+#include <vector>
 
 /********** definitions **********/
-
+#define QUEUE_SIZE_MAX 10000
 
 /************* macros *************/
 
@@ -15,49 +14,72 @@
 /******* enums declarations *******/
 
 
-/******* struct declarations ******/
+/******** class declarations ******/
 class QueueNode {
-	public:
-		uint64_t priority;
-		
-		void *element;
-		QueueNode *from;
+public:
+
+    int64_t index;
+    int64_t key;
+    void *element;
+    uint8_t removed;
+
+    QueueNode *previous;	//node that comes before this node in a sorted queue
+    QueueNode *next;		//node that comes after this node in a sorted queue
+
+    /* CONSTRUCTORS */
+    QueueNode();
+    QueueNode(const QueueNode &rhs);
+    QueueNode(int64_t key, void *element);
+
+    /* FUNCTIONS */
+
 };
 
 class Queue {
-	public:
-		uint16_t size;
-		uint16_t index;
+public:
+    uint64_t size;
+    uint64_t index;
+
+    QueueNode nodes[QUEUE_SIZE_MAX];
 	
-		QueueNode *nodes;
+    QueueNode *head;
+    QueueNode *tail;
+
+    /* CONSTRUCTORS */
+    Queue();
+	Queue(QueueNode queue_head);
+    Queue(const Queue &rhs);
+
+    /* FUNCTIONS */
+    int is_empty();
+    int is_full();
+    void clear();
+
+    QueueNode* append(void *element);
+    QueueNode* append(QueueNode node);
+    QueueNode* enqueue(int64_t key, void *element);
+    QueueNode* enqueue(QueueNode node);
+
+    QueueNode* peek();
+    QueueNode dequeue();
+
+    void change_key(int64_t key_old, int64_t key_new);
+    void change_key(QueueNode *node, int64_t key_new);
+
+    QueueNode* find(int64_t key_find);
+    QueueNode* find(QueueNode *start, int64_t key_find, int direction_fwd);
+
+    void print();
+private:
+    QueueNode* insert_front(QueueNode node);
+    QueueNode* insert_back(QueueNode node);
+
+    void decrease_swap(QueueNode *node);
+    void increase_swap(QueueNode *node);
+    void node_swap(QueueNode *previous, QueueNode *next);
 };
 
 /****** function declarations *****/
-Queue queue_init(uint16_t size);
-
-QueueNode queue_node_init(void *loc, uint64_t priority);
-
-int queue_is_empty(Queue queue);
-
-int queue_is_full(Queue queue);
-
-QueueNode* queue_peek(Queue *queue);
-
-QueueNode* queue_append(Queue *queue, QueueNode node);
-
-QueueNode* queue_enqueue(Queue *queue, QueueNode node);
-
-QueueNode queue_dequeue(Queue *queue);
-
-int queue_find_neighbors_card(Queue *queue, QueueNode from, int num_neighbors, QueueNode **neighbors);
-
-int queue_find_neighbors_diag(Queue *queue, QueueNode from, int num_neighbors, QueueNode **neighbors);
-
-void queue_sort(Queue *queue);
-
-void queue_node_swap(QueueNode *beta, QueueNode *alpha);
-
-void queue_print(Queue queue);
 
 
 #endif /* QUEUE_H */

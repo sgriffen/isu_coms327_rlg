@@ -1,7 +1,7 @@
 /******** include std libs ********/
 #include <stdlib.h>
 /******* include custom libs ******/
-#include "./movement.h"
+#include "./character_movement.h"
 #include "../../utils/math_utils.h"
 
 /********** definitions **********/
@@ -25,7 +25,7 @@ Coordinate move_away(Dungeon *dungeon, Coordinate start, Coordinate end, int avo
     else if (start.x > end.x) 	{ next.x = start.x + 1; }
     else                        { next.x = start.x; }
 
-    if ((avoid_npc && cell_contains_npc(dungeon->cells[next.y][next.x])) || immutable(dungeon->cells[next.y][next.x]) || start.is_same(next)) { next = move_rand(dungeon, start, avoid_npc, immutable); }
+    if ((avoid_npc && dungeon->cells[next.y][next.x].contains_npc()) || immutable(dungeon->cells[next.y][next.x]) || start.is_same(next)) { next = move_rand(dungeon, start, avoid_npc, immutable); }
 
     return next;
 }
@@ -44,7 +44,7 @@ Coordinate move_towards(Dungeon *dungeon, Coordinate start, Coordinate end, int 
 	else if (start.x > end.x) 	{ next.x = start.x - 1; }
     else                        { next.x = start.x; }
 
-    if ((avoid_npc && cell_contains_npc(dungeon->cells[next.y][next.x])) || immutable(dungeon->cells[next.y][next.x]) || start.is_same(next)) { next = move_rand(dungeon, start, avoid_npc, immutable); }
+    if ((avoid_npc && dungeon->cells[next.y][next.x].contains_npc()) || immutable(dungeon->cells[next.y][next.x]) || start.is_same(next)) { next = move_rand(dungeon, start, avoid_npc, immutable); }
 
 	return next;
 }
@@ -98,7 +98,7 @@ Coordinate move_min_ntunneling(Dungeon *dungeon, Coordinate loc, int avoid_npc) 
 		next.x = loc.x - 1;
 	}
 
-    if ((avoid_npc && cell_contains_npc(dungeon->cells[next.y][next.x])) || cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) { next = move_rand(dungeon, loc, avoid_npc, cell_immutable_ntunneling); }
+    if ((avoid_npc && dungeon->cells[next.y][next.x].contains_npc()) || cell_immutable_ntunneling(dungeon->cells[next.y][next.x])) { next = move_rand(dungeon, loc, avoid_npc, cell_immutable_ntunneling); }
 
 	return next;
 }
@@ -152,7 +152,7 @@ Coordinate move_min_tunneling(Dungeon *dungeon, Coordinate loc, int avoid_npc) {
 		next.x = loc.x - 1;
 	}
 
-    if ((avoid_npc && cell_contains_npc(dungeon->cells[next.y][next.x])) || cell_immutable_tunneling(dungeon->cells[next.y][next.x])) { next = move_rand(dungeon, loc, avoid_npc, cell_immutable_tunneling); }
+    if ((avoid_npc && dungeon->cells[next.y][next.x].contains_npc()) || cell_immutable_tunneling(dungeon->cells[next.y][next.x])) { next = move_rand(dungeon, loc, avoid_npc, cell_immutable_tunneling); }
 
     return next;
 }
@@ -237,7 +237,7 @@ Coordinate move_rand(Dungeon *dungeon, Coordinate loc, int avoid_npc, int (*immu
             break;
 	    }
 
-	    if ((avoid_npc && cell_contains_npc(dungeon->cells[next.y][next.x])) || immutable(dungeon->cells[next.y][next.x])) { move++; }
+	    if ((avoid_npc && dungeon->cells[next.y][next.x].contains_npc()) || immutable(dungeon->cells[next.y][next.x])) { move++; }
 	    else { break; }
 	}
 

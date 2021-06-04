@@ -1,3 +1,36 @@
+04/28/2021
+	- Turn in of final assignment 1.10 draft
+	- Updating README
+	- Implemented game state loading (not fully working, and now saving is broken when items are equipped)
+
+04/27/2021
+	- Game state saving now working
+
+04/24/2021
+	- Started code to save/load game state
+	- Added keypress 'S' to save the current game state
+	- Added keypress 'N' to load a saved game state
+	- Fixed PC/NPC damage messages
+	- Added raw ntunneling distance map printing
+	- Added raw tunneling distance map printing
+	- Added hardness map printing
+
+04/23/2021
+	- New priority queue fully implemented in game logic
+		- Significantly increased game turn performance
+
+04/22/2021
+	- Fibheap didn't work out, so implementing doubly linked priority queue in an attempt to improve game performance
+
+04/21/2021
+	- Tested fibonacci implementation
+	- Added keypress 'D' to display raw ntunneling distance map (map printing unimplemented at this time)
+	- Added keypress 'T' to display raw tunneling distance map (map printing unimplemented at this time)
+	- Added keypress 'H' to display hardness map (map printing unimplemented at this time)
+	- Added keypress 'S' to save current game state (game saving unimplemented at this time)
+04/20/2021
+	- Implemnted Fibonacci heap for use in pathfinding algorithms
+
 04/15/2021
 	- Turn in of final assignment 1.09 draft
 	- Applying equipped item bonuses to applicable PC attributes

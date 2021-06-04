@@ -1,7 +1,9 @@
-#include <stdint.h>
-
 #ifndef ROOM_H
 #define ROOM_H
+
+#include <fstream>
+
+#include <stdint.h>
 
 #include "./coordinate.h"
 
@@ -17,6 +19,8 @@
 
 
 /******* struct declarations ******/
+class Room;
+
 class Room {
 	public:
 		uint8_t index;
@@ -34,7 +38,10 @@ class Room {
 		Room(uint8_t room_index, uint8_t room_height, uint8_t room_width);
 		
 		/* FUNCTIONS */
+		void clean();
 		
+		void disk_load(std::ifstream& file);
+		void disk_save(std::ofstream& file);
 };
 
 /****** function declarations *****/

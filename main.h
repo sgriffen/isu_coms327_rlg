@@ -1,12 +1,12 @@
-#include <string>
-#include <vector>
-
 #ifndef ROUGE_H
 #define ROUGE_H
 
+#include <string>
+#include <vector>
+
 #include "./src/game/classdef/state.h"
-#include "./src/res/config.h"
-#include "./src/res/color.h"
+#include "./src/config/config.h"
+#include "./src/config/color.h"
 
 /********** definitions ***********/
 

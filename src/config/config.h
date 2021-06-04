@@ -30,6 +30,7 @@ typedef struct {
 	
 	std::string config_npc;
 	std::string config_item;
+	std::string config_disk;
 	uint32_t num_npcs;
 	uint32_t num_items;
 	uint32_t num_dungeons;

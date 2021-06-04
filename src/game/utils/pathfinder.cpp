@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 /******* include custom libs ******/
-#include "./pathfinder.h"
+#include "pathfinder.h"
 
 /********** definitions **********/
 #define QUEUE_MAX_SIZE 1700
@@ -12,113 +12,37 @@
 
 
 /****** function definitions ******/
-void pathfinder_rewind(Dungeon *dungeon, Coordinate *start, Coordinate *end, int (*rewind_to_start)(Dungeon*, QueueNode*, Coordinate *start)) {
-	
-	int i = 0, j = 0;
-	int end_found = 0;
-	int num_traversed = 0;
-	QueueNode *traversed = (QueueNode*)calloc((dungeon->width)*(dungeon->height), sizeof(QueueNode));
-	Queue queue = queue_init(QUEUE_MAX_SIZE);
-	
-	for (i = 0; i < dungeon->height; i++) { //initialize all weights to infinity traversal distance (UINT32_HAX), except starting cell
-		for (j = 0; j < dungeon->width; j++) {
-			
-//			dungeon->cells[i][j].weight[0] = CELL_HARDNESS_MAX;
-			
-			if (!cell_immutable_tunneling(dungeon->cells[i][j])) {
-				
-				if (start->is_same(dungeon->cells[i][j].location)) 	{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), CELL_HARDNESS_MIN)); }
-				else 												{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), UINT16_MAX)); }
-				
-//				printf("-- debug -- adding to queue y:[%d] x:[%d]\n", dungeon->cells[i][j].location.y, dungeon->cells[i][j].location.x);
-			}
-		}
-	}
-	
-//	printf("-- debug -- queue:\n");
-//	queue_print(queue);
-//	printf("-- end debug --\n");
-	
-//	printf("-- debug -- starting queue at y:[%d] x:[%d]\n", start->y, start->x);
-	
-//	printf("-- debug -- queue size:[%d]\n", queue.size);
-//	printf("-- debug -- queue index:[%d]\n", queue.index);
-//	printf("-- debug -- first in queue at index:[%d] - priority:[%d] y:[%d] x:[%d]\n", queue.index-1, queue_peek(&queue)->priority, queue_peek(&queue)->cell_loc->y, queue_peek(&queue)->cell_loc->x);
-//	printf("-- debug -- ending search at y:[%d] x:[%d]\n", end->y, end->x);
-	
-	/* traverse queue (execute Dijkstra’s Algorithm) */
-	
-	while (!queue_is_empty(queue)) {
-		
-		QueueNode node = queue_dequeue(&queue);
-		
-//		printf("-- debug -- looking at y:[%d] x:[%d]\n", node.cell_loc->y, node.cell_loc->x);
-		
-		Coordinate *loc = (Coordinate*)(node.element);
-		pathfinder_mark_neighbors(&queue, node, CELL_NUM_NEIGHBORS/4, CELL_TRAVERSAL_COST(dungeon->cells[loc->y][loc->x].hardness), queue_find_neighbors_card);
-		traversed[num_traversed] = node;
-		num_traversed++;
-		
-		if (end->is_same(*loc)) {
-			
-			end_found = 1;
-			break;
-		}
-	}
-	
-	if (end_found) {
-		
-		printf("-- debug -- search end found, calling callback function. traversing number of cells:[%d]\n", num_traversed);
-		
-		for (i = 0; i < num_traversed/2; i++) { //flip traversed array
-			
-			QueueNode temp = traversed[i];
-			traversed[i] = traversed[num_traversed-i];
-			traversed[num_traversed-i] = temp;
-		}
-		printf("-- debug -- flipped rewind array\n");
-		for (i = 0; i < num_traversed; i++) {
-			
-			Coordinate *loc = (Coordinate*)(traversed[i].element);
-			printf("-- debug -- rewinding to cell y:[%d] x:[%d]\n", loc->y, loc->x);
-		}
-		rewind_to_start(dungeon, traversed, start);
-	}
-	else { printf("-- debug -- search end not found\n"); }
-	
-	free(queue.nodes);
-	free(traversed);
-	
-	return;
-}
-
 void pathfinder_ntunneling(Dungeon *dungeon, Coordinate *start) {
 	
 	int i = 0, j = 0;
-	Queue queue = queue_init(QUEUE_MAX_SIZE);
+//	Queue queue = queue_init(QUEUE_MAX_SIZE);
+	Queue queue = Queue();
+	QueueNode* queue_nodes[DUNGEON_HEIGHT][DUNGEON_WIDTH];
+	for (i = 0; i < dungeon->height; i++) {
+		for (j = 0; j < dungeon->width; j++) { queue_nodes[i][j] = NULL; }
+	}
 	
 	for (i = 0; i < dungeon->height; i++) { //initialize all weights to infinity traversal distance (UINT32_HAX), except starting cell
 		for (j = 0; j < dungeon->width; j++) {
-						
+			
 			if (!cell_immutable_ntunneling(dungeon->cells[i][j])) {
 				
-				if (start->is_same(dungeon->cells[i][j].location)) 	{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), CELL_HARDNESS_MIN)); }
-				else 												{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), UINT16_MAX)); }
+				if (dungeon->cells[i][j].location.is_same(*start)) 	{ queue_nodes[i][j] = queue.enqueue(CELL_HARDNESS_MIN, &(dungeon->cells[i][j])); }
+				else 												{ queue_nodes[i][j] = queue.enqueue(INT32_MAX, &(dungeon->cells[i][j])); }
 			}
 		}
 	}
 	
 	/* traverse queue (execute Dijkstra’s Algorithm) */
-	while (!queue_is_empty(queue)) {
+	while (!queue.is_empty()) {
 		
-		QueueNode node = queue_dequeue(&queue);		
-		Coordinate *loc = (Coordinate*)(node.element);
-		dungeon->cells[loc->y][loc->x].weight_ntunneling = node.priority;
+		QueueNode node = queue.dequeue();
 		
-		pathfinder_mark_neighbors(&queue, node, CELL_NUM_NEIGHBORS, CELL_TRAVERSAL_COST(dungeon->cells[loc->y][loc->x].hardness), queue_find_neighbors_diag);
+		Cell *cell = (Cell*)node.element;
+		cell->weight_ntunneling = node.key;
+		
+		pathfinder_mark_neighbors(&queue, queue_nodes, node, CELL_TRAVERSAL_COST(cell->hardness), 0);
 	}
-	
-	free(queue.nodes);
 	
 	return;
 }
@@ -126,56 +50,92 @@ void pathfinder_ntunneling(Dungeon *dungeon, Coordinate *start) {
 void pathfinder_tunneling(Dungeon *dungeon, Coordinate *start) {
 	
 	int i = 0, j = 0;
-	Queue queue = queue_init(QUEUE_MAX_SIZE);
+	Queue queue = Queue();
+	QueueNode* queue_nodes[DUNGEON_HEIGHT][DUNGEON_WIDTH];
+	for (i = 0; i < dungeon->height; i++) {
+		for (j = 0; j < dungeon->width; j++) { queue_nodes[i][j] = NULL; }
+	}
 	
 	for (i = 0; i < dungeon->height; i++) { //initialize all weights to infinity traversal distance (CELL_HARDNESS_MAX), except starting cell
 		for (j = 0; j < dungeon->width; j++) {
 			
 			if (!cell_immutable_tunneling(dungeon->cells[i][j])) {
 				
-				if (start->is_same(dungeon->cells[i][j].location)) 	{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), CELL_HARDNESS_MIN)); }
-				else 												{ queue_enqueue(&queue, queue_node_init(&(dungeon->cells[i][j].location), UINT16_MAX)); }
+				if (dungeon->cells[i][j].location.is_same(*start)) 	{ queue_nodes[i][j] = queue.enqueue(CELL_HARDNESS_MIN, &(dungeon->cells[i][j])); }
+				else 												{ queue_nodes[i][j] = queue.enqueue(INT32_MAX, &(dungeon->cells[i][j])); }
 			}
 		}
 	}
 	
 	/* traverse queue (execute Dijkstra’s Algorithm) */
-	while (!queue_is_empty(queue)) {
+	while (!queue.is_empty()) {
 		
-		QueueNode node = queue_dequeue(&queue);		
-		Coordinate *loc = (Coordinate*)(node.element);
-		dungeon->cells[loc->y][loc->x].weight_tunneling = node.priority;
+		QueueNode node = queue.dequeue();
 		
-		pathfinder_mark_neighbors(&queue, node, CELL_NUM_NEIGHBORS, CELL_TRAVERSAL_COST(dungeon->cells[loc->y][loc->x].hardness), queue_find_neighbors_diag);
+		Cell *cell = (Cell*)node.element;
+		cell->weight_tunneling = node.key;
+		
+		pathfinder_mark_neighbors(&queue, queue_nodes, node, CELL_TRAVERSAL_COST(cell->hardness), 1);
 	}
-	
-	free(queue.nodes);
 	
 	return;
 }
 
-void pathfinder_mark_neighbors(Queue *queue, QueueNode from, int max_num_neighbors, uint32_t cost, int (*mark)(Queue*, QueueNode, int, QueueNode**)) {
+void pathfinder_mark_neighbors(Queue *queue, QueueNode* queue_nodes[DUNGEON_HEIGHT][DUNGEON_WIDTH], QueueNode from, uint32_t cost, uint8_t tunneling) {
+
+	pathfinder_mark_neighbors_node(queue, queue_nodes, from, cost, tunneling, -1, 0);
+	pathfinder_mark_neighbors_node(queue, queue_nodes, from, cost, tunneling, -1, 1);
+	pathfinder_mark_neighbors_node(queue, queue_nodes, from, cost, tunneling, 0, 1);
+	pathfinder_mark_neighbors_node(queue, queue_nodes, from, cost, tunneling, 1, 1);
+	pathfinder_mark_neighbors_node(queue, queue_nodes, from, cost, tunneling, 1, 0);
+	pathfinder_mark_neighbors_node(queue, queue_nodes, from, cost, tunneling, 1, -1);
+	pathfinder_mark_neighbors_node(queue, queue_nodes, from, cost, tunneling, 0, -1);
+	pathfinder_mark_neighbors_node(queue, queue_nodes, from, cost, tunneling, -1, -1);
 	
-	int i = 0;
-	int num_neighbors = 0;
-	int priority_changed = 0;
-	QueueNode **neighbors = (QueueNode**)calloc(max_num_neighbors, sizeof(QueueNode*));
+	return;
+}
+void pathfinder_mark_neighbors_node(Queue *queue, QueueNode* queue_nodes[DUNGEON_HEIGHT][DUNGEON_WIDTH], QueueNode from, uint32_t cost, uint8_t tunneling, int8_t offset_h, int8_t offset_w) {
 	
-	num_neighbors = mark(queue, from, max_num_neighbors, neighbors);
+	Cell *cell = (Cell*)from.element;
+	Coordinate loc = cell->location;
+	QueueNode *neighbor_node = queue_nodes[(loc.y)+offset_h][(loc.x)+offset_w];
+	if (neighbor_node && !(neighbor_node->removed) && neighbor_node->key > (from.key + cost)) {
+
+        queue->change_key(neighbor_node, (from.key + cost));
+		Cell* neighbor_cell = (Cell*)neighbor_node->element;
 		
-	for (i = 0; i < num_neighbors; i++) {
-				
-		if (neighbors[i]->priority > (from.priority + cost)) {
-			
-			neighbors[i]->priority = from.priority + cost;
-			neighbors[i]->from = &(from);
-			priority_changed = 1;
-		}
+		if (tunneling) 	{ neighbor_cell->weight_tunneling = (from.key + cost); }
+		else 			{ neighbor_cell->weight_ntunneling = (from.key + cost); }
 	}
 	
-	if (priority_changed) { queue_sort(queue); }
+	return;
+}
+
+
+void pathfinder_mark_neighbors(FibHeap *heap, FibNode* heap_nodes[DUNGEON_HEIGHT][DUNGEON_WIDTH], FibNode from, uint32_t cost, uint8_t tunneling) {
+
+	pathfinder_mark_neighbors_node(heap, heap_nodes, from, cost, tunneling, -1, 0);
+	pathfinder_mark_neighbors_node(heap, heap_nodes, from, cost, tunneling, -1, 1);
+	pathfinder_mark_neighbors_node(heap, heap_nodes, from, cost, tunneling, 0, 1);
+	pathfinder_mark_neighbors_node(heap, heap_nodes, from, cost, tunneling, 1, 1);
+	pathfinder_mark_neighbors_node(heap, heap_nodes, from, cost, tunneling, 1, 0);
+	pathfinder_mark_neighbors_node(heap, heap_nodes, from, cost, tunneling, 1, -1);
+	pathfinder_mark_neighbors_node(heap, heap_nodes, from, cost, tunneling, 0, -1);
+	pathfinder_mark_neighbors_node(heap, heap_nodes, from, cost, tunneling, -1, -1);
 	
-	free(neighbors);
+	return;
+}
+void pathfinder_mark_neighbors_node(FibHeap *heap, FibNode* heap_nodes[DUNGEON_HEIGHT][DUNGEON_WIDTH], FibNode from, uint32_t cost, uint8_t tunneling, int8_t offset_h, int8_t offset_w) {
+	
+	Coordinate loc = ((Cell*)from.element)->location;
+	if (heap_nodes[(loc.y)+offset_h][(loc.x)+offset_w] && ((from.key + cost) < heap_nodes[(loc.y)+offset_h][(loc.x)+offset_w]->key)) {
+		
+		heap->decrease_node(heap_nodes[(loc.y)+offset_h][(loc.x)+offset_w], (from.key + cost));
+		Cell* neighbor = (Cell*)heap_nodes[(loc.y)+offset_h][(loc.x)+offset_w]->element;
+		
+		if (tunneling) 	{ neighbor->weight_tunneling = (from.key + cost); }
+		else 			{ neighbor->weight_ntunneling = (from.key + cost); }
+	}
 	
 	return;
 }

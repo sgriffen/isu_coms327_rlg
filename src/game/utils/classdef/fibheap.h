@@ -1,4 +1,3 @@
-#inblude <vector>
 #include <cmath>
 #include <cstdint>
 
@@ -6,7 +5,7 @@
 #define FIBHEAP_H
 
 /********** definitions **********/
-
+#define FIBHEAP_SIZE_MAX 10000
 
 /************* macros *************/
 
@@ -14,11 +13,11 @@
 /******* enums declarations *******/
 
 
-/******* struct declarations ******/
+/******** class declarations ******/
 class FibNode {
 	public:
 		
-		uint64_t key;
+		int64_t key;
 		void *element;
 		
 		FibNode *parent;
@@ -33,7 +32,7 @@ class FibNode {
 		/* CONSTRUCTORS */
 		FibNode();
 		FibNode(const FibNode &rhs);
-		FibNode(uint64_t key, void *element);
+		FibNode(int64_t node_key, void *node_element);
 		
 		/* FUNCTIONS */
 		
@@ -42,34 +41,40 @@ class FibNode {
 class FibHeap {
 	public:
 		uint16_t size;
-	
-		FibNode min;
-		
+
+		FibNode nodes[FIBHEAP_SIZE_MAX];
+		FibNode *min;
+
 		/* CONSTRUCTORS */
 		FibHeap();
 		FibHeap(const FibHeap &rhs);
 		FibHeap(FibNode root);
 		
 		/* FUNCTIONS */
-		FibHeap* heap_union(FibHeap *alpha, FibHeap *beta);
+		int is_empty();
+		int is_full();
+		void clear();
+		FibHeap* h_union(FibHeap *beta, FibHeap *alpha);
 		
-		FibNode* node_find(uint64_t key);
-		FibNode* node_link(FibNode *alpha, FibNode *beta);
+		FibNode* insert_key(int64_t in_key, void* in_element);
+		FibNode* insert_node(FibNode in_node);
 		
-		FibNode* insert_key(uint64_t in_key, void* element);
-		FibNode* insert_node(FibNode *in_node);
+		FibNode* link(FibNode *beta, FibNode *alpha);
 		
-		FibNode extract_min(FibNode *in_node);
-		
-		FibNode delete_key(uint64_t del_key);
+		FibNode* peak_min();
+		FibNode extract_min();
+		FibNode delete_key(int64_t del_key);
 		FibNode delete_node(FibNode *del_node);
 		
-		FibNode* decrease_key(uint64_t key_old, uint64_t key_new);
-		FibNode* decrease_node(FibNode *node, uint64_t key_new);
+		FibNode* decrease_key(int64_t key_old, int64_t key_new);
+		FibNode* decrease_node(FibNode *node, int64_t key_new);
 		
-		void heap_consolidate();
-		void heap_cut(FibNode *node);
-		void heap_cascade_cut(FibNode *node);
+		FibNode* find_key(int64_t find_key);
+		FibNode* find_node(FibNode* node, int64_t find_key);
+		
+		void consolidate();
+		void cut(FibNode *node, FibNode *temp);
+		void cut_cascade(FibNode *node);
 		void print();
 };
 

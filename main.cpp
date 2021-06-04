@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
 		},
 		.config_npc 			= dir_home + "/.rlg327/monster_desc.txt",
 		.config_item 			= dir_home + "/.rlg327/object_desc.txt",
+		.config_disk			= dir_home + "/.rlg327/rlg_disk",
 		.num_npcs 				= 0,
 		.num_items				= 0,
 		.num_dungeons 			= 0
@@ -43,7 +44,7 @@ int main(int argc, char *argv[]) {
 	rouge_init(&g_state, argv, run_args);
 	
 	/* main game logic */
-	g_state.run(run_args);
+	g_state.run();
 	
 	/* save dungeons to file if desired */
 	rouge_clean(&g_state, argv, run_args);
@@ -57,20 +58,23 @@ void args_parse(int argc, char *argv[], RunArgs *run_args) {
 	
 	for (i = 1; i < argc; i++) {
 		
-		if (!strcmp(argv[i], "--config-npc") || !strcmp(argv[i], "--c-npc")) 		{ run_args->config_npc.assign(argv[i+1]); } //define absolute path to file to read npc config from 
-		
-		if (!strcmp(argv[i], "--config-item") || !strcmp(argv[i], "--c-item")) 		{ run_args->config_item.assign(argv[i+1]); } //define absolute path to file to read item config from
-		
-		if (!strcmp(argv[i], "--nummon") || !strcmp(argv[i], "--nm")) 				{ run_args->num_npcs = atoi(argv[i+1]); } //define number of npcs per dungeon
-		
-		if (!strcmp(argv[i], "--numitem") || !strcmp(argv[i], "--nt")) 				{ run_args->num_items = atoi(argv[i+1]); } //define number of items per dungeon
-		
-		if (!strcmp(argv[i], "--numdun") || !strcmp(argv[i], "--nd")) 				{ run_args->num_dungeons = atoi(argv[i+1]); } //define number of dungeons to generate
-		
-		if (i+1 < argc && (!strcmp(argv[i], "--print") || !strcmp(argv[i], "--p"))) { //print a (dungeons border) or (filled-in walls and empty rooms)
-			
-			if (!strcmp(argv[i+1], "f")) 	{ run_args->print_config.fill = 2; } //print (filled-in walls and empty rooms)
+		//define number of npcs per dungeon
+		if (!strcmp(argv[i], "--nummon") || !strcmp(argv[i], "--nm")) 				{ run_args->num_npcs = atoi(argv[i+1]); }
+		//define number of items per dungeon
+		if (!strcmp(argv[i], "--numitem") || !strcmp(argv[i], "--nt")) 				{ run_args->num_items = atoi(argv[i+1]); }
+		//define number of dungeons to generate
+		if (!strcmp(argv[i], "--numdun") || !strcmp(argv[i], "--nd")) 				{ run_args->num_dungeons = atoi(argv[i+1]); }
+		//print a (dungeons border) or (filled-in walls and empty rooms)
+		if (i+1 < argc && (!strcmp(argv[i], "--print") || !strcmp(argv[i], "--p"))) {
+			//print (filled-in walls and empty rooms)
+			if (!strcmp(argv[i+1], "f")) 	{ run_args->print_config.fill = 2; }
 		}
+		//define absolute path to file to read npc config from 
+		if (!strcmp(argv[i], "--config-npc") || !strcmp(argv[i], "--c-n")) 			{ run_args->config_npc.assign(argv[i+1]); }
+		//define absolute path to file to read item config from
+		if (!strcmp(argv[i], "--config-item") || !strcmp(argv[i], "--c-i")) 		{ run_args->config_item.assign(argv[i+1]); }
+		//define absolute path to file to save/load game state to/from
+		if (!strcmp(argv[i], "--config-disk") || !strcmp(argv[i], "--c-d"))			{ run_args->config_disk.assign(argv[i+1]); }
 	}
 	
 	if (!(run_args->num_dungeons)) { run_args->num_dungeons = utils_rand_between(2, 10, NULL); }
@@ -89,6 +93,8 @@ void rouge_init(GameState *g_state, char *argv[], RunArgs run_args) {
 	std::vector<Item_Template> item_templates = rouge_parse_item(run_args.config_item);
 	
 	*g_state = GameState(run_args.num_dungeons, run_args.num_npcs, run_args.num_items, npc_templates, item_templates);
+	g_state->dir_disk = run_args.config_disk;
+	g_state->run_args = run_args;
 	
 	rouge_init_terminal();
 	

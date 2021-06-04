@@ -1,31 +1,29 @@
-#include <stdint.h>
-
 #ifndef PATHFINDER_H
 #define PATHFINDER_H
 
-#include "./classdef/queue.h"
+#include <stdint.h>
+
 #include "../classdef/dungeon.h"
-
-/*********** definitions **********/
-
-
-/************* macros *************/
-
+#include "./classdef/queue.h"
+#include "./classdef/fibheap.h"
 
 /******* enums declarations *******/
+
 
 
 /******* struct declarations ******/
 
 
-/****** function declarations *****/
-void pathfinder_rewind(Dungeon *dungeon, Coordinate *start, Coordinate *end, int (*rewind_to_start)(Dungeon*, QueueNode*, Coordinate *start));
 
+/****** function declarations *****/
 void pathfinder_ntunneling(Dungeon *dungeon, Coordinate *start);
 
 void pathfinder_tunneling(Dungeon *dungeon, Coordinate *start);
 
-void pathfinder_mark_neighbors(Queue *queue, QueueNode from, int max_num_neighbors, uint32_t cost, int (*mark)(Queue*, QueueNode, int, QueueNode**));
+void pathfinder_mark_neighbors(Queue *queue, QueueNode* queue_nodes[DUNGEON_HEIGHT][DUNGEON_WIDTH], QueueNode from, uint32_t cost, uint8_t tunneling);
+void pathfinder_mark_neighbors_node(Queue *queue, QueueNode* queue_nodes[DUNGEON_HEIGHT][DUNGEON_WIDTH], QueueNode from, uint32_t cost, uint8_t tunneling, int8_t offset_h, int8_t offset_w);
 
+void pathfinder_mark_neighbors(FibHeap *heap, FibNode* heap_nodes[DUNGEON_HEIGHT][DUNGEON_WIDTH], FibNode from, uint32_t cost, uint8_t tunneling);
+void pathfinder_mark_neighbors_node(FibHeap *heap, FibNode* heap_nodes[DUNGEON_HEIGHT][DUNGEON_WIDTH], FibNode from, uint32_t cost, uint8_t tunneling, int8_t offset_h, int8_t offset_w);
 
-#endif /* PATHFINDER_H */
+#endif /* QUEUE_H */

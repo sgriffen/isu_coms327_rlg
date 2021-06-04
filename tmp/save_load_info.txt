@@ -1,0 +1,95 @@
+Game saving
+	- state
+		- turn
+		- boss_defeated
+		- pc
+			- id
+			- symbol
+			- location.y
+			- location.x
+			- speed
+			- hp
+			- damage
+				- base
+				- num_dice
+				- num_sides
+			- inventory_size
+			- inventory
+				- for each
+					- de-reference and store:
+						- id
+						- type
+						- name
+						- symbol
+						- status
+						- rarity
+						- value
+						- weight
+						- attribute
+						- bonus_speed
+						- bonus_defense
+						- bonus_hit
+						- bonus_dodge
+						- bonus_damage
+							- base
+							- num_dice
+							- num_sides
+			- num_kills
+			- num_items_equipped
+			- equipped
+			- equipment_weapon
+				- see inventory
+			- equipment_offhand
+				- see inventory
+			- equipment_ranged
+				- see inventory
+			- equipment armor
+				- see inventory
+			- equipment_helmet
+				- see inventory
+			- equipment_cloak
+				- see inventory
+			- equipment_gloves
+				- see inventory
+			- equipment_boots
+				- see inventory
+			- equipment_amulet
+				- see inventory
+			- equipment_light
+				- see inventory
+			- equipment_ring0
+				- see inventory
+			- equipment_ring1
+				- see inventory
+		- num_dungeons
+		- num_dungeons_generated
+		- dungeon_index
+		- dungeons
+			- height
+			- width
+			- num_staircases_up
+			- num_staircases_down
+			- cells
+				- type_current
+				- hardness
+				- visited
+				- location.y
+				- location.x
+				- items.size
+				- items
+					- de-reference and store like pc inventory
+			- num_rooms
+			- rooms
+				- index
+				- height
+				- width
+				- tl.y
+				- tl.x
+			- npc_id_next
+			- num_npcs
+			- num_npcs_defined
+			- num_npcs_dead
+			- npcs
+				- store like pc
+				- type
+				- rarity

@@ -64,7 +64,7 @@ Dungeon::Dungeon(uint8_t dungeon_height, uint8_t dungeon_width, int dungeon_num_
 	num_cells 			= height * width;
 	num_volitile_cells 	= volitile_height * volitile_width;
 	
-	cells 				= (Cell**)calloc(num_cells, sizeof(Cell*));
+	cells 				= (Cell**)calloc(height, sizeof(Cell*));
 	for(i = 0; i < height; i++) { cells[i] = (Cell*)calloc(width, sizeof(Cell)); }
 	
 	/* initialize dungeon cells */
@@ -81,30 +81,65 @@ Dungeon::Dungeon(uint8_t dungeon_height, uint8_t dungeon_width, int dungeon_num_
 	dungeon_generate_items(this, dungeon_num_items, item_templates, item_unique_placed);
 }
 /****** function definitions ******/
+void Dungeon::clean() {
+	
+//	free(cells);
+//	free(rooms);
+//	free(staircases_up);
+//	free(staircases_down);
+//	free(npcs);
+//	free(items);
+	
+	return;
+}
+
 void Dungeon::draw(uint8_t offset_y, uint8_t offset_x, int print_fog, int print_fill, int print_weight) {
 	
 	int i = 0, j = 0;
-	int weight_offset = 0;
+	int weight_offset_h = 0;
+	int weight_offset_w = 0;
 	
-	if (print_weight == 1) { weight_offset = 2; }
+	if (print_weight == 1) { weight_offset_h = 2; }
 	
 	for (i = -2; i < height; i++) {
 		
-		if (weight_offset && i > -1) { mvprintw((offset_y + (i + weight_offset)), 0, "%2d - ", i); }
+		weight_offset_w = 0;
+		
+		if (weight_offset_h && i > -1) {
+			
+			mvprintw((offset_y + (i + weight_offset_h)), 0, "%2d - ", i);
+			weight_offset_w += 5;
+		}
 		
 		for (j = 0; j < width; j++) {
 			
-			if (weight_offset && i == -2) {
+			if (weight_offset_h && i == -2) {
 				
-				if (j == 0) { mvprintw((offset_y + (i + weight_offset)), (offset_x + j), "     %2d", j); }
-				else 		{ mvprintw((offset_y + (i + weight_offset)), (offset_x + j), "%2d", j); }
+				if (j == 0) {
+					
+					mvprintw((offset_y + (i + weight_offset_h)), (offset_x + weight_offset_w), "     %2d", j);
+					weight_offset_w += 7;
+				}
+				else {
+					
+					mvprintw((offset_y + (i + weight_offset_h)), (offset_x + weight_offset_w), "%2d", j);
+					weight_offset_w += 2;
+				}
 			}
-			else if (weight_offset && i == -1) {
+			else if (weight_offset_h && i == -1) {
 				
-				if (j == 0) { mvprintw((offset_y + (i + weight_offset)), (offset_x + j), "     --"); }
-				else 		{ mvprintw((offset_y + (i + weight_offset)), (offset_x + j), "--"); }
+				if (j == 0) { 
+				
+					mvprintw((offset_y + (i + weight_offset_h)), (offset_x + weight_offset_w), "     --");
+					weight_offset_w += 7;
+				}
+				else {
+					
+					mvprintw((offset_y + (i + weight_offset_h)), (offset_x + weight_offset_w), "--"); 
+					weight_offset_w += 2;
+				}
 			}
-			else if (i > -1) { cells[i][j].draw((offset_y + i + weight_offset), (offset_x + j), print_fog, print_fill, print_weight); }
+			else if (i > -1) { weight_offset_w += cells[i][j].draw((offset_y + i + weight_offset_h), (offset_x + weight_offset_w), print_fog, print_fill, print_weight); }
 		}
 	}
 	
@@ -384,28 +419,28 @@ void dungeon_generate_cooridor(Dungeon *dungeon, Coordinate start, Coordinate en
 }
 int dungeon_draw_cooridor(Dungeon *dungeon, QueueNode *nodes, Coordinate *start) {
 	
-	QueueNode node = nodes[0];
-	Coordinate *loc = (Coordinate*)(node.element);
-	while (!start->is_same(*loc)) {
-		
-		if (dungeon->cells[loc->y][loc->x].type_next != CellType_Room) {
-			
-			dungeon->cells[loc->y][loc->x].type_next = CellType_Cooridor;
-			dungeon->cells[loc->y][loc->x].hardness = 0;
-		} else {
-			
-			Room* node_room = room_contains_point(dungeon->num_rooms, &(dungeon->rooms), *loc);
-			if (node_room) { node_room->connected = 1; }
-		}
-		
-		node = *(node.from);
-	}
-	
-	if (dungeon->cells[loc->y][loc->x].type_next != CellType_Room) { //mark first cell in node array
-			
-		dungeon->cells[loc->y][loc->x].type_next = CellType_Cooridor;
-		dungeon->cells[loc->y][loc->x].hardness = 0;
-	}
+//	QueueNode node = nodes[0];
+//	Coordinate *loc = (Coordinate*)(node.element);
+//	while (!start->is_same(*loc)) {
+//		
+//		if (dungeon->cells[loc->y][loc->x].type_next != CellType_Room) {
+//			
+//			dungeon->cells[loc->y][loc->x].type_next = CellType_Cooridor;
+//			dungeon->cells[loc->y][loc->x].hardness = 0;
+//		} else {
+//			
+//			Room* node_room = room_contains_point(dungeon->num_rooms, &(dungeon->rooms), *loc);
+//			if (node_room) { node_room->connected = 1; }
+//		}
+//		
+//		node = *(node.from);
+//	}
+//	
+//	if (dungeon->cells[loc->y][loc->x].type_next != CellType_Room) { //mark first cell in node array
+//			
+//		dungeon->cells[loc->y][loc->x].type_next = CellType_Cooridor;
+//		dungeon->cells[loc->y][loc->x].hardness = 0;
+//	}
 	
 	return 0;
 }
@@ -484,7 +519,7 @@ void dungeon_generate_npcs(Dungeon *dungeon, int num_npcs, std::vector<NPC_Templ
 		dungeon->num_npcs_defined = 0;
 	}
 	else if (num_npcs > ((dungeon->num_volitile_cells) - 1)) { num_npcs = (dungeon->num_volitile_cells) - 1; }
-	dungeon->npcs =(NPC*)calloc(num_npcs, sizeof(NPC));
+	dungeon->npcs = (NPC*)calloc(num_npcs, sizeof(NPC));
 	
 	for (i = 0; i < num_npcs; i++) {
 		
@@ -772,7 +807,7 @@ void dungeon_pc_los(Dungeon *dungeon, Character *pc, uint8_t mark) {
 	}
 }
 
-int* dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinate next, int override_damage) {
+uint32_t* dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinate next, int override_damage) {
 	
 	/*
 		Resolves potential collisions with the next cell a character wants to move to, and the current character that's in that cell
@@ -781,20 +816,20 @@ int* dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinat
 		Returns the id of an npc if a character moves into the cell the is located in (pc attacks npc or npc's swap positions)
 	*/
 	
-	int collision_type = 0;
-	int damage_roll = 0;
-	int boss_defeated = 0;
+	uint32_t collision_type = 0;
+	uint32_t damage_roll = 0;
+	uint32_t boss_defeated = 0;
 	
 	PC* pc_location = NULL;
 	NPC* npc_location = NULL;
 	
-	if (character->id < 1) {
+	if (!(character->id)) {
 		
 		dungeon_pc_los(dungeon, character, 0);
 		
 		character->prev_location = character->location;
 		
-		npc_location = cell_contains_npc(dungeon->cells[next.y][next.x]);
+		npc_location = dungeon->cells[next.y][next.x].contains_npc();
 		if (npc_location) {
 			
 			//perform attack here
@@ -840,7 +875,7 @@ int* dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinat
 		
 		character->prev_location = character->location;
 		
-		pc_location = cell_contains_pc(dungeon->cells[next.y][next.x]);
+		pc_location = dungeon->cells[next.y][next.x].contains_pc();
 		if (pc_location) {
 			
 			//perform attack here
@@ -852,7 +887,7 @@ int* dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinat
 			collision_type = -1;
 		}
 		
-		npc_location = cell_contains_npc(dungeon->cells[next.y][next.x]);
+		npc_location = dungeon->cells[next.y][next.x].contains_npc();
 		if (npc_location && (npc_location->id != ((NPC*)(character))->id)) {
 			
 			/* move npc at location next to current character's location, and move current character to location next */
@@ -874,7 +909,10 @@ int* dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinat
 		}
 	}
 	
-	static int arr[] = { collision_type, damage_roll, boss_defeated };
+	uint32_t *arr = (uint32_t*)malloc(3 * sizeof(uint32_t));
+	arr[0] = collision_type;
+	arr[1] = damage_roll;
+	arr[2] = boss_defeated;
 	return arr;
 }
 

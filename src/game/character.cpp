@@ -1,11 +1,10 @@
 /******** include std libs ********/
 #include <stdlib.h>
 #include <string.h>
-#include <ncurses.h>
 
 /******* include custom libs ******/
 #include "./classdef/character.h"
-#include "./utils/movement.h"
+#include "./utils/character_movement.h"
 
 /*********** global vars **********/
 
@@ -81,6 +80,7 @@ PC::PC(const PC &rhs) : Character(rhs) {
 	
 	num_kills 			= rhs.num_kills;
 	num_items_equipped	= rhs.num_items_equipped;
+	equipped			= rhs.equipped;
 	equipment_weapon 	= rhs.equipment_weapon;
 	equipment_offhand 	= rhs.equipment_offhand;
 	equipment_ranged 	= rhs.equipment_weapon;
@@ -98,6 +98,7 @@ PC::PC(Coordinate pc_loc, uint16_t pc_hp, Dice pc_damage, uint8_t pc_speed) : Ch
 	
 	num_kills = 0;
 	num_items_equipped	= 0;
+	equipped			= 0x0000;
 	equipment_weapon 	= NULL;
 	equipment_offhand 	= NULL;
 	equipment_ranged 	= NULL;
@@ -115,6 +116,7 @@ PC::PC(std::string pc_name, std::string pc_description, char pc_symbol, std::vec
 	
 	num_kills = 0;
 	num_items_equipped	= 0;
+	equipped			= 0x0000;
 	equipment_weapon 	= NULL;
 	equipment_offhand 	= NULL;
 	equipment_ranged 	= NULL;
@@ -150,7 +152,41 @@ NPC::NPC(uint8_t npc_rarity, std::string npc_name, std::string npc_description, 
 	rarity 	= npc_rarity;
 }
 
+
+NPC_Template::NPC_Template() {
+	
+	name 		= "";
+	description = "";
+	symbol 		= '\0';
+	type 		= 0x00;
+	rarity 		= 1;
+	color 		= std::vector<uint8_t>();
+	speed 		= Dice();
+	hp 			= Dice();
+	damage 		= Dice();
+}
+NPC_Template::NPC_Template(const NPC_Template &rhs) {
+	
+	name 		= rhs.name;
+	description = rhs.description;
+	symbol 		= rhs.symbol;
+	type 		= rhs.type;
+	rarity 		= rhs.rarity;
+	color 		= rhs.color;
+	speed 		= rhs.speed;
+	hp 			= rhs.hp;
+	damage 		= rhs.damage;
+}
+
 /****** function definitions ******/
+void Character::clean() {
+	
+	inventory.clear();
+	color.clear();
+
+	return;
+}
+
 void Character::draw(uint8_t print_y, uint8_t print_x, int print_fill) {
 	
 	attron(COLOR_PAIR(color[0]));
@@ -223,4 +259,102 @@ int PC::buff_light() {
 	(equipment_light)	? (buff += equipment_light->value) : (buff += 0);
 	
 	return buff;
+}
+
+
+NPC* NPC_Template::new_npc() {
+	
+	NPC *npc = new NPC();
+	
+	npc->type = type;
+	npc->name.assign(name);
+	npc->description.assign(description);
+	npc->symbol = symbol;
+	
+	npc->type 	= type;
+	npc->rarity = rarity;
+	npc->color 	= color;
+	
+	npc->speed 	= speed.roll();
+	npc->hp 	= hp.roll();
+	
+	npc->damage = damage;
+	
+	return npc;
+}
+
+void NPC_Template::print() {
+	
+	std::cout << name << std::endl;
+	
+	std::cout << description << std::endl;
+	
+	std::cout << symbol << std::endl;
+	
+	if (color.size()) {
+		
+		std::vector<uint8_t>::iterator color_itr;
+		for (color_itr = color.begin(); color_itr != color.end(); color_itr++) {
+			switch (*color_itr) {
+				
+			case PAIR_BLACK:
+				
+				std::cout << "BLACK ";
+				break;
+			case PAIR_RED:
+				
+				std::cout << "RED ";
+				break;
+			case PAIR_BLUE:
+				
+				std::cout << "BLUE ";
+				break;
+			case PAIR_CYAN:
+				
+				std::cout << "CYAN ";
+				break;
+			case PAIR_YELLOW:
+				
+				std::cout << "YELLOW ";
+				break;
+			case PAIR_MAGENTA:
+				
+				std::cout << "MAGENTA ";
+				break;
+			default:
+				
+				std::cout << "WHITE ";
+				break;
+			}
+		}
+	} else { std::cout << "INVALID COLOR"; }
+	std::cout << std::endl;
+	
+	speed.print();
+	std::cout << std::endl;
+	
+	if (type > 0) {
+		
+		if ((type >> NPC_TYPE_INTELLIGENT_SHIFT) & 1)	{ std::cout << "SMART "; }
+		if ((type >> NPC_TYPE_TELEPATHIC_SHIFT) & 1) 	{ std::cout << "TELE "; }
+		if ((type >> NPC_TYPE_TUNNELING_SHIFT) & 1) 	{ std::cout << "TUNNEL "; }
+		if ((type >> NPC_TYPE_ERRATIC_SHIFT) & 1) 		{ std::cout << "ERRATIC "; }
+		if ((type >> NPC_TYPE_PASS_SHIFT) & 1) 			{ std::cout << "PASS "; }
+		if ((type >> NPC_TYPE_PICKUP_SHIFT) & 1) 		{ std::cout << "PICKUP "; }
+		if ((type >> NPC_TYPE_DESTROY_SHIFT) & 1) 		{ std::cout << "DESTROY "; }
+		if ((type >> NPC_TYPE_UNIQUE_SHIFT) & 1) 		{ std::cout << "UNIQ "; }
+		if ((type >> NPC_TYPE_BOSS_SHIFT) & 1) 			{ std::cout << "BOSS"; }
+		std::cout << std::endl;
+	} else { std::cout << "INVALID TYPE"; }
+	std::cout << std::endl;
+	
+	hp.print();
+	std::cout << std::endl;
+	
+	damage.print();
+	std::cout << std::endl;
+	
+	std::cout << unsigned(rarity) << std::endl;
+	
+	return;
 }

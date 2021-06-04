@@ -1,14 +1,15 @@
+#ifndef CELL_H
+#define CELL_H
+
+#include <fstream>
 #include <vector>
 
 #include <stdint.h>
 
-#ifndef CELL_H
-#define CELL_H
-
 #include "./coordinate.h"
 #include "./character.h"
 #include "./item.h"
-#include "../../res/config.h"
+#include "../../config/color.h"
 
 /********** definitions ***********/
 #define CELL_HARDNESS_MIN 0
@@ -20,7 +21,7 @@
 
 
 /******* enums declarations *******/
-typedef enum {
+enum CellType {
 	
 	CellType_Wall,
 	CellType_Room,
@@ -28,9 +29,11 @@ typedef enum {
 	CellType_Stair_up,
 	CellType_Stair_down,
 	CellType_Border
-} CellType;
+};
 
 /******* struct declarations ******/
+class Cell;
+
 class Cell {
 	public:
 		Coordinate location;
@@ -52,20 +55,23 @@ class Cell {
 		Cell(uint8_t cell_y, uint8_t cell_x, int cell_hardness);
 		
 		/* FUNCTIONS */
-		void draw(uint8_t print_y, uint8_t print_x, int print_fog, int print_fill, int print_weight);
+		int immutable_ntunneling();
+		int immutable_tunneling();
+		PC* contains_pc();
+		NPC* contains_npc();
+		std::vector<Item*>* contains_items();
+		
+		void clean();
+		
+		void disk_load(std::ifstream& file, std::vector<Item_Template> item_templates, std::vector<Item*> *items_loaded);
+		void disk_save(std::ofstream& file);
+		
+		int draw(uint8_t print_y, uint8_t print_x, int print_fog, int print_fill, int print_weight);
 };
 
 /****** function declarations *****/
 int cell_immutable_ntunneling(Cell cell);
 
 int cell_immutable_tunneling(Cell cell);
-
-PC* cell_contains_pc(Cell cell);
-
-NPC* cell_contains_npc(Cell cell);
-
-std::vector<Item*>* cell_contains_items(Cell cell);
-
-void cell_draw(Cell cell, uint8_t y, uint8_t x, int print_fog, int print_fill, int print_color, int print_weight);
 
 #endif /* CELL_H */

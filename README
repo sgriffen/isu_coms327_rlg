@@ -1,21 +1,30 @@
 Sean Griffen (griffens)
 
-This is my solution to homework 1.09, "PC Equipment and Updated Combat".
+This is my solution to homework 1.10.
+In this assignment, I have added printing of the non-tunneling and tunneling costs map and the 'D' and 'T' keys respectively, and I have added the cell hardness map when the 'H' key is pressed. All of the keys described in assignment 1.05 should have bindings to them now.
+Additionally, I significantly improved my game turn time by turning my naive queue into a doubly linked list with tail and head pointers. This significantly improved my game's performance compared to assignment 1.09.
+Finally, a semi-working game save/load implementation was attempted. Using the 'S' key to save and the 'N' key to load, the game will save and load at any point while playing.
+	However, a segfault happens when trying to save the game with an item equipped, and I don't have the time to debug it, so rip :(
+	But, it does save without error with items are inventory. However, duplicate items are generated with re-loading the game.
+I did have plans to play sound using OpenAL, but I did not have time to make that happen.
+
+It's not perfect, and I hope to work on it over the summer to really make is something I want.
 
 Things to note:
 	- The PC gets 1 free move at the begenning
 	- Equipped items and item inventory is persistent while traversing dungeon levels
 	- To win, BOSS NPC must be defeated (if generated), otherwise all NPCs on the last level of the dungeon must be defeated
 	- Warping on top of an NPC will immediatly kill that NPC
-	- Pathfinding algorithm is a naive implementation of a priority queue (i.e. is not a binary heap), so it performs very slow due to re-sorting array after a priority of a node is changed (reason for delay between user input and pc and npcs moving). 
-		Working on a fix to use a binary heap to implement the priority queue, but won't get done until next assignment, sorry :(
-
+	- Saving the game with an item equipped will result in a seg-fault
+	- Loading the game with items in inventory will result in duplicate items (possible a good thing depending on your perspective)
+	- All items/npcs behave the same as they did in assignment 1.09
+	
 To run the program, run the Makefile, and enter './rlg'. The valid command arguments are defined as follows:
 	It is assummed that an argument is precedded with a "--" and arguments have no such prefix. 
 	A '|' means that the flags/arguments that are involved are never entered at the same time. Pick 1 flag/argument to enter
 	Ignore '<>' characters when entering arguments in the command window:
 	- Specify npc config file
-		- flag: config-npc | c-npc
+		- flag: config-npc | c-n
 		- arguments: <filepath.txt>
 		- description: Specify an ascii-encoded file to load the npc template configurations from
 		- notes: 
@@ -23,9 +32,9 @@ To run the program, run the Makefile, and enter './rlg'. The valid command argum
 			- Otherwise, <filepath> must be the absolute path to the file.
 			- File parsing is assumed to be a .txt file
 		- default behavior: Item configuration is loaded from ~/.rlg327/monster_desc.txt
-		- example command: --c-npc "configs/templates/npcs.txt"
+		- example command: --c-n "configs/templates/npcs.txt"
 	- Specify item config file
-		- flag: config-item | c-item
+		- flag: config-item | c-i
 		- arguments: <filepath.txt>
 		- description: Specify an ascii-encoded file to load the item template configurations from
 		- notes: 
@@ -33,15 +42,17 @@ To run the program, run the Makefile, and enter './rlg'. The valid command argum
 			- Otherwise, <filepath> must be the absolute path to the file.
 			- File parsing is assumed to be a .txt file
 		- default behavior: Item configuration is loaded from ~/.rlg327/object_desc.txt
-		- example command: --c-item "configs/templates/items.txt"
-	- Print dungeon mod:
-		- flag: print | p
-		- arguments: <f>
-		- description: 
-			- Rocks are printed as unicode blocks, increasing shade of block as hardness increases. Rooms and cooridors are printed as empty spaces to contrast filled in rocks
-		- notes: 
-		- default behavior: Printing follows required specification with border around playable area
-		- example command: --border f
+		- example command: --c-i "configs/templates/items.txt"
+	- Specify file to save/load to
+		- flag: config-disk
+		- arguments: <filepath>
+		- description: Specify an ascii-encoded file to save/load the game from
+		- notes:
+			- If the file is in the same directory as main.cpp, then <filepath> can be relative to main.cpp
+			- Otherwise, <filepath> must be the absolute path to the file.
+			- While no file extension is required (it's added not by default), the game is stored using ascii characters, not in a bitfile format
+		- default behavior: Save/load configuration is ~/.rlg327/rlg_disk
+		- example command: --c-d "configs/templates/items.txt"
 	- Number of npcs to generate per level
 		- flag: nummon | nm
 		- arguments: <uint>
@@ -62,7 +73,7 @@ To run the program, run the Makefile, and enter './rlg'. The valid command argum
 			- If numitem is defined, all generated "dungeons" during a single "game" have the same <uint> number of items
 		- default behavior: A random number of items between 10 and 20 are generated
 		- example command: --nt 5
-	- Number of dungeons to generate per game
+	- Number of dungeons to generate per game0
 		- flag: numdun | nd
 		- arguments: <uint>
 		- description:
@@ -72,4 +83,4 @@ To run the program, run the Makefile, and enter './rlg'. The valid command argum
 		- example command: --nd 12
 
 A command to run this application with all arguments defined may look as follows:
-	./rlg [<--config-npc | --c-npc> <filepath>] [<--config-item | --c-item> <filepath>] [<--print | --p> <f>] [<--nummmon | --nm> <uint>] [<--numdun | --nd> <uint>] [<--numitem | --nt> <uint>]
+	./rlg [<--config-npc | --c-n> <filepath>] [<--config-item | --c-i> <filepath>] [<--config-disk | --c-d> <filepath> [<--print | --p> <f>] [<--nummmon | --nm> <uint>] [<--numdun | --nd> <uint>] [<--numitem | --nt> <uint>]

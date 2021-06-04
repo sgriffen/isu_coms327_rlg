@@ -6,7 +6,6 @@
 #include "./classdef/cell.h"
 #include "./classdef/dungeon.h"
 #include "../utils/math_utils.h"
-#include "../res/color.h"
 
 /***** constructor definitions *****/
 Cell::Cell() {
@@ -19,8 +18,8 @@ Cell::Cell() {
 	visited 			= 0;
 	visible 			= 0;
 	meta_data 			= -1;
-	weight_ntunneling 	= UINT16_MAX;
-	weight_tunneling 	= UINT16_MAX;
+	weight_ntunneling 	= INT32_MAX;
+	weight_tunneling 	= INT32_MAX;
 }
 Cell::Cell(uint8_t cell_y, uint8_t cell_x, int cell_hardness) : Cell() {
 	
@@ -31,7 +30,27 @@ Cell::Cell(uint8_t cell_y, uint8_t cell_x, int cell_hardness) : Cell() {
 }
 
 /****** function definitions ******/
-void Cell::draw(uint8_t print_y, uint8_t print_x, int print_fog, int print_fill, int print_weight) {
+int Cell::immutable_ntunneling() 	{ return hardness > 0; }
+
+int Cell::immutable_tunneling() 	{ return hardness >= CELL_HARDNESS_MAX; }
+
+PC* Cell::contains_pc() 	{ return (character && character->id < 1) ? ((PC*)(character)) : (NULL); }
+
+NPC* Cell::contains_npc() 	{ return (character && character->id > 0) ? ((NPC*)(character)) : (NULL); }
+
+std::vector<Item*>* Cell::contains_items() { return (!items.empty()) ? &(items) : NULL; }
+
+void Cell::clean() {
+	
+	character = NULL;
+	items.clear();
+	
+	return;
+}
+
+int Cell::draw(uint8_t print_y, uint8_t print_x, int print_fog, int print_fill, int print_weight) {
+	
+	int print_width = 1;
 	
 	if (print_weight == 1) {
 		
@@ -41,13 +60,15 @@ void Cell::draw(uint8_t print_y, uint8_t print_x, int print_fog, int print_fill,
 			if (items.size() > 1) { mvprintw(print_y, print_x, "%2c", '&'); }
 			else { items[0]->draw(print_y, print_x, 0); }
 		}
+		else { mvprintw(print_y, print_x, "%2x", hardness); }
+		print_width = 2;
 	}
 	else {
 		
 		if (print_fog && !visited) {
 			
 			mvaddch(print_y, print_x, ' ');
-			return;
+			return 1;
 		}
 		if (cell_immutable_tunneling(*(this))) {
 			
@@ -85,12 +106,12 @@ void Cell::draw(uint8_t print_y, uint8_t print_x, int print_fog, int print_fill,
 					
 					if (print_weight == 2) { //print non-tunneling weight mod 10
 						
-						if (weight_ntunneling >= UINT16_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
+						if (weight_ntunneling >= INT32_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
 						else 									{ mvprintw(print_y, print_x, "%d", weight_ntunneling % 10); }
 					}
 					else if (print_weight == 3) { 	//print tunneling weight mod 10
 						
-						if (weight_tunneling >= UINT16_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
+						if (weight_tunneling >= INT16_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
 						else 									{ mvprintw(print_y, print_x, "%d", weight_tunneling % 10); }
 					}
 					else if (print_weight == 4) { mvprintw(print_y, print_x, "%d", CELL_TRAVERSAL_COST(hardness)); }	//print cell traversal cost
@@ -101,12 +122,12 @@ void Cell::draw(uint8_t print_y, uint8_t print_x, int print_fog, int print_fill,
 					
 					if (print_weight == 2) { 	//print non-tunneling weight mod 10
 						
-						if (weight_ntunneling >= UINT16_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
+						if (weight_ntunneling >= INT32_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
 						else 									{ mvprintw(print_y, print_x, "%d", weight_ntunneling % 10); }
 					}
 					else if (print_weight == 3) { 	//print tunneling weight mod 10
 						
-						if (weight_tunneling >= UINT16_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
+						if (weight_tunneling >= INT16_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
 						else 									{ mvprintw(print_y, print_x, "%d", weight_tunneling % 10); }
 					}
 					else if (print_weight == 4) { mvprintw(print_y, print_x, "%d", CELL_TRAVERSAL_COST(hardness)); }	//print cell traversal cost
@@ -117,12 +138,12 @@ void Cell::draw(uint8_t print_y, uint8_t print_x, int print_fog, int print_fill,
 					
 					if (print_weight == 2) { 	//print non-tunneling weight mod 10
 						
-						if (weight_ntunneling >= UINT16_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
+						if (weight_ntunneling >= INT32_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
 						else 									{ mvprintw(print_y, print_x, "%d", weight_ntunneling % 10); }
 					}
 					else if (print_weight == 3) { 	//print tunneling weight mod 10
 						
-						if (weight_tunneling >= UINT16_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
+						if (weight_tunneling >= INT16_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
 						else 									{ mvprintw(print_y, print_x, "%d", weight_tunneling % 10); }
 					}
 					else if (print_weight == 4) { mvprintw(print_y, print_x, "%d", CELL_TRAVERSAL_COST(hardness)); }	//print cell traversal cost
@@ -132,12 +153,12 @@ void Cell::draw(uint8_t print_y, uint8_t print_x, int print_fog, int print_fill,
 					
 					if (print_weight == 2) { 	//print non-tunneling weight mod 10
 						
-						if (weight_ntunneling >= UINT16_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
+						if (weight_ntunneling >= INT32_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
 						else 									{ mvprintw(print_y, print_x, "%d", weight_ntunneling % 10); }
 					}
 					else if (print_weight == 3) {	 //print tunneling weight mod 10
 						
-						if (weight_tunneling >= UINT16_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
+						if (weight_tunneling >= INT16_MAX-1) 	{ mvaddch(print_y, print_x, 'X'); }
 						else 									{ mvprintw(print_y, print_x, "%d", weight_tunneling % 10); }
 					}
 					else if (print_weight == 4) 				{ mvprintw(print_y, print_x, "%d", CELL_TRAVERSAL_COST(hardness)); } 	//print cell traversal cost
@@ -163,7 +184,7 @@ void Cell::draw(uint8_t print_y, uint8_t print_x, int print_fog, int print_fill,
 		}
 	}
 	
-	return;
+	return print_width;
 }
 int cell_immutable_ntunneling(Cell cell) { return cell.hardness > 0; }
 

@@ -1,8 +1,9 @@
-#include <stdint.h>
-#include <string>
-
 #ifndef DICE_H
 #define DICE_H
+
+#include <string>
+
+#include <stdint.h>
 
 /********** definitions **********/
 
@@ -28,6 +29,7 @@ class Dice {
 		/* FUNCTIONS */
 		uint32_t roll();
 		std::string to_string();
+		
 		void print();
 };
 

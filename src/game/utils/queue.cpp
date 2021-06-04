@@ -1,9 +1,9 @@
 /******** include std libs ********/
-#include <stdlib.h>
-#include <stdint.h>
+#include <iostream>
+
+#include "./classdef/queue.h"
 
 /******* include custom libs ******/
-#include "./classdef/queue.h"
 
 /********** definitions **********/
 
@@ -11,129 +11,306 @@
 /*********** global vars **********/
 
 
+/***** constructor definitions *****/
+QueueNode::QueueNode() {
+	
+    index       = 0;
+    key 		= INT32_MAX;
+    removed     = 0;
+    element 	= NULL;
+    previous 	= NULL;
+    next 		= NULL;
+}
+QueueNode::QueueNode(const QueueNode &rhs) {
+
+    index       = rhs.index;
+    key 		= rhs.key;
+    removed     = rhs.removed;
+    element 	= rhs.element;
+    previous 	= rhs.previous;
+    next 		= rhs.next;
+}
+QueueNode::QueueNode(int64_t queue_key, void *queue_element) : QueueNode() {
+
+    key 	= queue_key;
+    element = queue_element;
+}
+
+Queue::Queue() {
+
+    size    = 0;
+    index   = 0;
+    head    = NULL;
+    tail    = NULL;
+}
+Queue::Queue(QueueNode queue_head) : Queue() {
+
+    size    		= 1;
+    index   		= 1;
+	nodes[0]   		= queue_head;
+    head    		= &(nodes[index-1]);
+    tail    		= &(nodes[index-1]);
+	head->next 		= &(nodes[index-1]);
+	tail->previous 	= &(nodes[index-1]);
+}
+Queue::Queue(const Queue &rhs) {
+	
+    size 	= rhs.size;
+    index   = rhs.index;
+    head 	= rhs.head;
+    tail 	= rhs.tail;
+}
+
 /****** function definitions ******/
-Queue queue_init(uint16_t length) {
+int Queue::is_empty() { return !(head); }
+int Queue::is_full() { return index >= QUEUE_SIZE_MAX; }
+void Queue::clear() {
+
+    size    = 0;
+    index   = 0;
+    head    = NULL;
+    tail    = NULL;
 	
-	Queue queue;
-	queue.size = length;
-	queue.index = 0;
-	queue.nodes = (QueueNode*)calloc(length, sizeof(QueueNode));
-	
-	return queue;
+    return;
 }
 
-QueueNode queue_node_init(void *element, uint64_t priority) {
-	
-	QueueNode node;
-	node.priority = priority;
-	node.element = element;
-	node.from = NULL;
-	
-	return node;
+QueueNode* Queue::append(void *element) {
+
+    QueueNode node = QueueNode(INT32_MAX, element);
+    return append(node);
+}
+QueueNode* Queue::append(QueueNode node) {
+
+    if (is_full()) { return NULL; }
+
+    node.key = (tail->key) + 1;
+
+    return insert_back(node);
+}
+QueueNode* Queue::enqueue(int64_t key, void *element) {
+
+    QueueNode node = QueueNode(key, element);
+    return enqueue(node);
+}
+QueueNode* Queue::enqueue(QueueNode node) { //lower key = higher priority (aka closer to head which is dequeued first)
+
+    if (is_full()) { return NULL; }
+
+    if (is_empty()) {
+
+        node.index = index;
+        nodes[index] = node;
+
+        head = &(nodes[index]);
+        tail = &(nodes[index]);
+
+        head->previous = NULL;
+        tail->next = NULL;
+
+        size++;
+        index++;
+        return &(nodes[index-1]);
+    }
+    else {
+
+        if (node.key < head->key)       { return insert_front(node); }
+        else if (node.key >= tail->key) { return insert_back(node); }
+        else {
+
+            //get average of head key and tail key, decide which direction to iterate through queue to insert node to
+            int avg_key = (head->key + tail->key) / 2;
+
+            //insert node before head, move up queue until sorted
+            if (node.key < avg_key) { increase_swap(insert_front(node)); }
+            // insert node after tail, move down queue until sorted
+            else 					{ decrease_swap(insert_back(node)); }
+
+            return &(nodes[index-1]);
+        }
+    }
 }
 
-int queue_is_empty(Queue queue) { return !queue.index; }
+QueueNode* Queue::peek() { return head; }
 
-int queue_is_full(Queue queue) { return queue.index == queue.size; }
+QueueNode Queue::dequeue() {
 
-QueueNode* queue_append(Queue *queue, QueueNode node) {
-	
-	if (queue_is_full(*queue)) { return NULL; }
-	
-	node.priority = (queue->nodes[(queue->index)-1].priority) + 1;
-	return queue_enqueue(queue, node);
+    if (!is_empty()) {
+
+        head->removed = 1;
+        QueueNode dequeued = *head;
+
+        if (!head->next) {
+
+            clear();
+            return dequeued;
+        }
+
+        (head->next)->previous = NULL;
+        head = head->next;
+
+        size--;
+
+        return dequeued;
+    }
+
+    return QueueNode();
+}
+void Queue::change_key(int64_t key_old, int64_t key_new) {
+
+    QueueNode *node = find(key_old);
+    return change_key(node, key_new);
+}
+void Queue::change_key(QueueNode *node, int64_t key_new) {
+
+    if (node) {
+
+        int key_old = node->key;
+        node->key = key_new;
+        if (key_new < key_old) 	{ decrease_swap(node); }
+        else 					{ increase_swap(node); }
+
+        return;
+    }
+
+    return;
 }
 
-QueueNode* queue_enqueue(Queue *queue, QueueNode node) {
-	
-	int i = 0;
-	
-	if (queue_is_full(*queue)) { return NULL; }
-	
-	if (queue_is_empty(*queue)) { queue->nodes[queue->index] = node; }
-	else {
-		
-		for (i = queue->index-1; i >= 0; i--) { //start at back of queue
-			
-			if (node.priority > queue->nodes[i].priority) { queue->nodes[i+1] = queue->nodes[i]; } //if node adding has a lower priority (higher value) than the current node in the queue, move current node further back in queue
-			else { break; }
-		}
-		
-		queue->nodes[i+1] = node;
-	}
-	
-	queue->index++;
-	return &(queue->nodes[i+1]);
+QueueNode* Queue::find(int64_t key_find) {
+
+    int avg_key = (head->key + tail->key) / 2;
+
+    if (key_find < avg_key) { return find(head, key_find, 1); }
+    else 					{ return find(tail, key_find, 0); }
+}
+QueueNode* Queue::find(QueueNode *start, int64_t key_find, int direction_fwd) {
+
+    while (start) {
+
+        if (start->key == key_find) { return start; }
+        if (direction_fwd) { start = start->next; }
+        else { start = start->previous; }
+    }
+
+    return NULL;
 }
 
-QueueNode* queue_peek(Queue *queue) { return &(queue->nodes[(queue->index)-1]); }
+void Queue::print() {
 
-QueueNode queue_dequeue(Queue *queue) {
-	
-	if (!queue_is_empty(*queue)) {
-		
-		(queue->index)--;
-		return queue->nodes[queue->index];
-	}
-	
-	return (QueueNode){0};
+    if (!head) { std::cout << "Queue is empty" << std::endl; }
+    else {
+
+        QueueNode *start = head;
+        do {
+
+            std::cout << "{ key:[" << start->key << "], element:[" << start->element << "] }";
+            if (start->next) { std::cout << "<--->"; }
+            start = start->next;
+        } while (start);
+        std::cout << std::endl << "Queue contains [" << size << "] nodes" << std::endl;
+    }
 }
 
-int queue_find_neighbors_card(Queue *queue, QueueNode from, int num_neighbors, QueueNode **neighbors) {
-	
-	int i = 0;
-	int visited = 0;
-	
-	for (i = queue->index-1; i >= 0 && visited < num_neighbors; i--) {
-		
-		Coordinate *loc = (Coordinate*)(queue->nodes[i].element);
-		Coordinate *loc_from = (Coordinate*)(from.element);
-		if (loc_from->is_neighbor_card(*loc)) {
-			
-			neighbors[visited] = &(queue->nodes[i]);
-			visited++;
-		}
-	}
-	
-	return visited;
+QueueNode* Queue::insert_front(QueueNode node) {
+
+    nodes[index] = node;
+
+    nodes[index].previous = NULL;
+    nodes[index].next = head;
+    head->previous = &nodes[index];
+
+    head = &nodes[index];
+
+    size++;
+    index++;
+    return &nodes[index-1];
+}
+QueueNode* Queue::insert_back(QueueNode node) {
+
+    nodes[index] = node;
+
+    nodes[index].previous = tail;
+    nodes[index].next = NULL;
+    tail->next = &nodes[index];
+
+    tail = &nodes[index];
+
+    size++;
+    index++;
+    return &nodes[index-1];
 }
 
-int queue_find_neighbors_diag(Queue *queue, QueueNode from, int num_neighbors, QueueNode **neighbors) {
-	
-	int i = 0;
-	int visited = 0;
-	
-	for (i = queue->index-1; i >= 0 && visited < num_neighbors; i--) {
-		
-		Coordinate *loc = (Coordinate*)(queue->nodes[i].element);
-		Coordinate *loc_from = (Coordinate*)(from.element);
-		if (loc_from->is_neighbor_diag(*loc)) {
-			
-			neighbors[visited] = &(queue->nodes[i]);
-			visited++;
-		}
-	}
-	
-	return visited;
-}
+void Queue::decrease_swap(QueueNode *node) {
 
-void queue_sort(Queue *queue) {
-	
-	int i = 0, j = 0;
-	
-	for (i = queue->index-1; i > 0; i--) {
-		for (j = i-1; j >= 0; j--) {
-			
-			if (queue->nodes[j].priority < queue->nodes[i].priority) { queue_node_swap(&(queue->nodes[j]), &(queue->nodes[i])); } //if nodes[j] has a higher priority (lower value) than nodes[i], swap
-		}
-	}
-	
-	return;
-}
+    if (node->previous && node->key < (node->previous)->key) {
 
-void queue_node_swap(QueueNode *beta, QueueNode *alpha) {
-	
-	QueueNode temp = *alpha;
-	*alpha = *beta;
-	*beta = temp;
+        node_swap(node->previous, node);
+        decrease_swap(node);
+    }
+
+    return;
+}
+void Queue::increase_swap(QueueNode *node) {
+
+    if (node->next && node->key >= (node->next)->key) {
+
+        node_swap(node, node->next);
+        increase_swap(node);
+    }
+
+    return;
+}
+void Queue::node_swap(QueueNode *previous, QueueNode *next) { // swap previous and next positions
+
+    if (!previous || !next || previous == next) { return; }
+
+    if (!(previous->previous) || !(next->previous)) {
+
+        QueueNode *node_alpha;
+        QueueNode *node_beta;
+        if (!(previous->previous)) {
+
+            node_alpha = previous;
+            node_beta = next;
+        } else {
+
+            node_alpha = next;
+            node_beta = previous;
+        }
+        head = node_beta;
+        node_beta->previous = NULL;
+        node_alpha->next = node_beta->next;
+        (node_beta->next)->previous = node_alpha;
+        node_beta->next = node_alpha;
+        node_alpha->previous = node_beta;
+    }
+    else if (!(next->next) || !(previous->next)) {
+
+        QueueNode *node_alpha;
+        QueueNode *node_beta;
+        if (!(next->next)) {
+
+            node_alpha = previous;
+            node_beta = next;
+        } else {
+
+            node_alpha = next;
+            node_beta = previous;
+        }
+        tail = node_alpha;
+        node_alpha->next = NULL;
+        node_beta->previous = node_alpha->previous;
+        (node_alpha->previous)->next = node_beta;
+        node_alpha->previous = node_beta;
+        node_beta->next = node_alpha;
+    } else {
+
+        previous->previous->next = next;
+        next->next->previous = previous;
+        previous->next = next->next;
+        next->previous = previous->previous;
+        previous->previous = next;
+        next->next = previous;
+    }
+
+    return;
 }

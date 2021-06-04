@@ -1,18 +1,17 @@
+#ifndef DUNGEON_H
+#define DUNGEON_H
+
+#include <fstream>
 #include <string>
 #include <vector>
 
 #include <stdint.h>
-
-#ifndef DUNGEON_H
-#define DUNGEON_H
 
 #include "./coordinate.h"
 #include "./cell.h"
 #include "./room.h"
 #include "./character.h"
 #include "./item.h"
-#include "./npc_template.h"
-#include "./item_template.h"
 #include "../utils/classdef/queue.h"
 
 /********** definitions ***********/
@@ -34,6 +33,8 @@
 
 
 /******* struct declarations ******/
+class Dungeon;
+
 class Dungeon {
 	public:
 		uint8_t height;
@@ -70,6 +71,11 @@ class Dungeon {
 		Dungeon(uint8_t dungeon_height, uint8_t dungeon_width, int dungeon_num_npcs, int dungeon_num_items, int dungeon_num_stairs_up, int dungeon_num_stairs_down, int dungeon_ommit_stairs, std::vector<NPC_Template> npc_templates, std::vector<Item_Template> item_templates, std::vector<std::string> *npc_unique_placed, std::vector<std::string> *item_unique_placed);
 		
 		/* FUNCTIONS */
+		void clean();
+		
+		void disk_load(std::ifstream& file, std::vector<NPC_Template> npc_templates, std::vector<Item_Template> item_templates, std::vector<Item*> *items_loaded);
+		void disk_save(std::ofstream& file);
+		
 		void draw(uint8_t offset_y, uint8_t offset_x, int print_fog, int print_fill, int print_weight);
 };
 
@@ -104,7 +110,7 @@ int dungeon_los_hilow(Dungeon dungeon, Coordinate start, Coordinate end);
 
 void dungeon_pc_los(Dungeon *dungeon, Character *pc, uint8_t mark);
 
-int* dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinate next, int override_damage = 0);
+uint32_t* dungeon_resolve_collision(Dungeon *dungeon, Character *character, Coordinate next, int override_damage = 0);
 
 int dungeon_contains_npcs(Dungeon *dungeon);
 

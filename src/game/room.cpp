@@ -26,6 +26,12 @@ Room::Room(uint8_t room_index, uint8_t room_height, uint8_t room_width) : Room()
 }
 
 /****** function definitions ******/
+void Room::clean() {
+	
+	
+	
+	return;
+}
 void room_init_cells(Room *room, Coordinate top_left, Coordinate bottom_right, Coordinate center) {
 	
 	room->tl = top_left;
